@@ -1,0 +1,9 @@
+[package]
+name = "hexgrid"
+edition = "2021"
+version = "0.0.1"
+description = "A Support Library for Hexagonal grids. Based on work by redblobgames; rewritten and extended from work done on hex2d-rs."
+
+[dependencies]
+num = "0.4"
+serde = { version = "1.0", features = ["derive"], optional = true }
