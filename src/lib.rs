@@ -16,56 +16,15 @@
 
 //! Hexagonal Grid Map Utility library
 //!
-//! A lot of ideas taken from [redbloggames hexagon page][hexagon]
+//! A lot of ideas taken from [redbloggames hexagon page][hexagon] and [Hex2d-rs][hex2d]
 //!
 //! [hexagon]: http://www.redblobgames.com/grids/hexagons/
-//!
-//! Pointy-topped:
-//!
-//! ```text
-//!           /\
-//!         /    \
-//!        |      |
-//!        |      |
-//!         \    /
-//!           \/
-//!
-//!            -z
-//! +y     YZ  |  XZ     +x
-//!  ---       |       ---
-//!     ---    |    ---
-//!        --- | ---
-//!   YX      -x-    XY
-//!        --- | ---
-//!     ---    |    ---
-//!  ---   ZX  |  ZY   ---
-//! -x         |          -y
-//!            +z
-//! ```
-//!
-//! Flat-topped:
-//!
-//! ```text
-//!            ____
-//!           /    \
-//!          /      \
-//!          \      /
-//!           \____/
-//!
-//!        +y       -z
-//!         \       /
-//!          \ YZ  /
-//!       YX  \   /  XZ
-//!            \ /
-//!   -x--------x--------+x
-//!            / \
-//!       ZX  /   \ XY
-//!          /  ZY \
-//!         /       \
-//!        +z       -y
-//! ```
-//!
+//! [hex2d]: https://github.com/dpc/hex2d-rs
 
+#![doc = "## Flat Topped:"]
+#![doc = include_str!("flat.svg")]
+#![doc = "## Pointy Topped:"]
+#![doc = include_str!("pointy.svg")]
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 #![warn(missing_docs)]

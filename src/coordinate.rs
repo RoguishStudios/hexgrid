@@ -20,6 +20,50 @@ use crate::{
 };
 
 /// Integer Coordinate on 2d hexagonal grid
+///
+/// ```text
+///           /\
+///         /    \
+///        |      |
+///        |      |
+///         \    /
+///           \/
+///
+///            -z
+/// +y     YZ  |  XZ     +x
+///  ---       |       ---
+///     ---    |    ---
+///        --- | ---
+///   YX      -x-    XY
+///        --- | ---
+///     ---    |    ---
+///  ---   ZX  |  ZY   ---
+/// -x         |          -y
+///            +z
+/// ```
+///
+/// Flat-topped:
+///
+/// ```text
+///            ____
+///           /    \
+///          /      \
+///          \      /
+///           \____/
+///
+///        +y       -z
+///         \       /
+///          \ YZ  /
+///       YX  \   /  XZ
+///            \ /
+///   -x--------x--------+x
+///            / \
+///       ZX  /   \ XY
+///          /  ZY \
+///         /       \
+///        +z       -y
+/// ```
+///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Coordinate<I: Integer = i32> {
