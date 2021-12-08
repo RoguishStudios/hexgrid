@@ -585,6 +585,9 @@
 <span id="585">585</span>
 <span id="586">586</span>
 <span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -1090,9 +1093,12 @@
     <span class="doccomment">/// ```rust</span>
     <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// for location in Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)) {</span>
-    <span class="doccomment">///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);</span>
-    <span class="doccomment">/// }</span>
+    <span class="doccomment">/// let locations = Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)).collect::&lt;Vec&lt;_&gt;&gt;();</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// assert_eq!(locations[0].distance(Coordinate::from_cubic(0,0)), 0);</span>
+    <span class="doccomment">/// assert_eq!(locations[1].distance(Coordinate::from_cubic(0,0)), 1);</span>
+    <span class="doccomment">/// assert_eq!(locations[7].distance(Coordinate::from_cubic(0,0)), 2);</span>
+    <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spiral_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Spiral</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">Spiral::new</span>(<span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)

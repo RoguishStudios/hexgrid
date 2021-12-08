@@ -3,7 +3,7 @@
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">hexgrid</span>::{<span class="ident">Coordinate</span>, <span class="ident">Spin</span>, <span class="ident">Direction</span>};
 
 <span class="kw">for</span> <span class="ident">location</span> <span class="kw">in</span> <span class="ident">Coordinate::from_cubic</span>(<span class="number">0</span>, <span class="number">0</span>).<span class="ident">ring_iter</span>(<span class="number">5</span>, <span class="ident">Spin::CW</span>(<span class="ident">Direction::YZ</span>)) {
-    <span class="macro">assert_eq!</span>(<span class="ident">c</span>.<span class="ident">distance</span>(<span class="ident">ring_c</span>), <span class="number">1</span>);
+    <span class="macro">assert_eq!</span>(<span class="ident">location</span>.<span class="ident">distance</span>(<span class="ident">Coordinate::from_cubic</span>(<span class="number">0</span>,<span class="number">0</span>)), <span class="number">5</span>);
 }</code></pre></div>
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <p><svg

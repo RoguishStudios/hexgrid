@@ -153,7 +153,7 @@
 <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// for location in Coordinate::from_cubic(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {</span>
-<span class="doccomment">///     assert_eq!(c.distance(ring_c), 1);</span>
+<span class="doccomment">///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;ring.svg&quot;</span>)]</span>
