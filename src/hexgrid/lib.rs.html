@@ -484,6 +484,9 @@
 <span id="484">484</span>
 <span id="485">485</span>
 <span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -502,15 +505,16 @@
 
 <span class="doccomment">//! Hexagonal Grid Map Utility library</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! A lot of ideas taken from [redbloggames hexagon page][hexagon] and [Hex2d-rs][hex2d]</span>
+<span class="doccomment">//! A lot of ideas taken from [RedBlogGames hexagon page][hexagon] and [Hex2d-rs][hex2d]</span>
+<span class="doccomment">//! ## Hex Orientations</span>
+<span class="doccomment">//! ### Flat Topped:</span>
+<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;flat.svg&quot;</span>)]</span>
+<span class="doccomment">//! ### Pointy Topped:</span>
+<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;pointy.svg&quot;</span>)]</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [hexagon]: http://www.redblobgames.com/grids/hexagons/</span>
 <span class="doccomment">//! [hex2d]: https://github.com/dpc/hex2d-rs</span>
 
-<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;## Flat Topped:&quot;</span>]</span>
-<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;flat.svg&quot;</span>)]</span>
-<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="string">&quot;## Pointy Topped:&quot;</span>]</span>
-<span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;pointy.svg&quot;</span>)]</span>
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::pedantic</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
@@ -527,6 +531,7 @@
 <span class="kw">mod</span> <span class="ident">spacing</span>;
 <span class="kw">mod</span> <span class="ident">spin</span>;
 <span class="kw">mod</span> <span class="ident">spiral</span>;
+<span class="kw">mod</span> <span class="ident">storage</span>;
 <span class="kw">mod</span> <span class="ident">types</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::angle::Angle</span>;
@@ -542,6 +547,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::spacing</span>::{<span class="ident">IntegerSpacing</span>, <span class="ident">Spacing</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::spin::Spin</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::spiral::Spiral</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::storage::SparseHexStorage</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::types</span>::{<span class="ident">Float</span>, <span class="ident">Integer</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
@@ -817,7 +823,7 @@
         {
             <span class="ident">with_test_points</span>(<span class="op">|</span><span class="ident">c</span>: <span class="ident">Coordinate</span><span class="op">|</span> {
                 <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="ident">c</span>.<span class="ident">to_cartesian_center</span>(<span class="ident">spacing</span>);
-                <span class="macro">assert_eq!</span>(<span class="ident">c</span>, <span class="ident">Coordinate::from_pixel</span>(<span class="ident">x</span>, <span class="ident">y</span>, <span class="ident">spacing</span>));
+                <span class="macro">assert_eq!</span>(<span class="ident">c</span>, <span class="ident">Coordinate::from_cartesian</span>(<span class="ident">x</span>, <span class="ident">y</span>, <span class="ident">spacing</span>));
             });
         }
     }

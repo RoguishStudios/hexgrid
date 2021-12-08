@@ -73,6 +73,8 @@
 <span id="73">73</span>
 <span id="74">74</span>
 <span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -89,7 +91,7 @@
 <span class="comment">// limitations under the License.</span>
 <span class="comment">//</span>
 
-<span class="doccomment">/// Integer trait required by this library</span>
+<span class="doccomment">/// Integer trait used by this library.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Integer</span>:
     <span class="ident">num::Signed</span>
     <span class="op">+</span> <span class="ident">num::Integer</span>
@@ -99,6 +101,7 @@
     <span class="op">+</span> <span class="ident">num::NumCast</span>
     <span class="op">+</span> <span class="ident">num::One</span>
     <span class="op">+</span> <span class="ident">num::Zero</span>
+    <span class="op">+</span> <span class="ident">std::hash::Hash</span>
     <span class="op">+</span> <span class="ident">std::marker::Copy</span>
     <span class="op">+</span> <span class="ident">std::ops::AddAssign</span>
     <span class="op">+</span> <span class="ident">std::default::Default</span>
@@ -114,13 +117,14 @@
         <span class="op">+</span> <span class="ident">num::NumCast</span>
         <span class="op">+</span> <span class="ident">num::One</span>
         <span class="op">+</span> <span class="ident">num::Zero</span>
+        <span class="op">+</span> <span class="ident">std::hash::Hash</span>
         <span class="op">+</span> <span class="ident">std::marker::Copy</span>
         <span class="op">+</span> <span class="ident">std::ops::AddAssign</span>
         <span class="op">+</span> <span class="ident">std::default::Default</span>
 {
 }
 
-<span class="doccomment">/// Float trait required by this library</span>
+<span class="doccomment">/// Float trait used by this library</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Float</span>:
     <span class="ident">num::Signed</span>
     <span class="op">+</span> <span class="ident">num::Float</span>

@@ -189,6 +189,14 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -210,7 +218,7 @@
 
 <span class="doccomment">/// Direction on a hexagonal map</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// See `Coordinate` for graph with directions.</span>
+<span class="doccomment">/// See [Coordinate](crate::Coordinate) for graph with directions.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Naming convention: increasing coordinate for a given direction is first</span>
 <span class="doccomment">/// decreasing is second. The missing coordinate is unaffected by a move in</span>
@@ -378,6 +386,14 @@
 
     <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Direction</span> {
         <span class="ident">Direction::from_int</span>(<span class="self">self</span>.<span class="ident">to_int</span>::<span class="op">&lt;</span><span class="ident">i8</span><span class="op">&gt;</span>() <span class="op">+</span> <span class="ident">a</span>.<span class="ident">to_int</span>::<span class="op">&lt;</span><span class="ident">i8</span><span class="op">&gt;</span>())
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">std::ops::Sub</span><span class="op">&lt;</span><span class="ident">Angle</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Direction</span> {
+    <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Direction</span>;
+
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Direction</span> {
+        <span class="ident">Direction::from_int</span>(<span class="self">self</span>.<span class="ident">to_int</span>::<span class="op">&lt;</span><span class="ident">i8</span><span class="op">&gt;</span>() <span class="op">-</span> <span class="ident">a</span>.<span class="ident">to_int</span>::<span class="op">&lt;</span><span class="ident">i8</span><span class="op">&gt;</span>())
     }
 }
 </code></pre></div>

@@ -585,36 +585,6 @@
 <span id="585">585</span>
 <span id="586">586</span>
 <span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
-<span id="590">590</span>
-<span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
-<span id="602">602</span>
-<span id="603">603</span>
-<span id="604">604</span>
-<span id="605">605</span>
-<span id="606">606</span>
-<span id="607">607</span>
-<span id="608">608</span>
-<span id="609">609</span>
-<span id="610">610</span>
-<span id="611">611</span>
-<span id="612">612</span>
-<span id="613">613</span>
-<span id="614">614</span>
-<span id="615">615</span>
-<span id="616">616</span>
-<span id="617">617</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -638,49 +608,11 @@
 
 <span class="doccomment">/// Integer Coordinate on 2d hexagonal grid</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// ```text</span>
-<span class="doccomment">///           /\</span>
-<span class="doccomment">///         /    \</span>
-<span class="doccomment">///        |      |</span>
-<span class="doccomment">///        |      |</span>
-<span class="doccomment">///         \    /</span>
-<span class="doccomment">///           \/</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///            -z</span>
-<span class="doccomment">/// +y     YZ  |  XZ     +x</span>
-<span class="doccomment">///  ---       |       ---</span>
-<span class="doccomment">///     ---    |    ---</span>
-<span class="doccomment">///        --- | ---</span>
-<span class="doccomment">///   YX      -x-    XY</span>
-<span class="doccomment">///        --- | ---</span>
-<span class="doccomment">///     ---    |    ---</span>
-<span class="doccomment">///  ---   ZX  |  ZY   ---</span>
-<span class="doccomment">/// -x         |          -y</span>
-<span class="doccomment">///            +z</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Flat-topped:</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```text</span>
-<span class="doccomment">///            ____</span>
-<span class="doccomment">///           /    \</span>
-<span class="doccomment">///          /      \</span>
-<span class="doccomment">///          \      /</span>
-<span class="doccomment">///           \____/</span>
-<span class="doccomment">///</span>
-<span class="doccomment">///        +y       -z</span>
-<span class="doccomment">///         \       /</span>
-<span class="doccomment">///          \ YZ  /</span>
-<span class="doccomment">///       YX  \   /  XZ</span>
-<span class="doccomment">///            \ /</span>
-<span class="doccomment">///   -x--------x--------+x</span>
-<span class="doccomment">///            / \</span>
-<span class="doccomment">///       ZX  /   \ XY</span>
-<span class="doccomment">///          /  ZY \</span>
-<span class="doccomment">///         /       \</span>
-<span class="doccomment">///        +z       -y</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">///</span>
+<span class="doccomment">/// ## Hex Orientations</span>
+<span class="doccomment">/// ### Flat Topped:</span>
+<span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;flat.svg&quot;</span>)]</span>
+<span class="doccomment">/// ### Pointy Topped:</span>
+<span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;pointy.svg&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Debug</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span> <span class="op">=</span> <span class="ident">i32</span><span class="op">&gt;</span> {
@@ -691,12 +623,12 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Create new Coord from `x` and `y`</span>
+    <span class="doccomment">/// Create new Coordinate from `x` and `y` cubic components.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cubic</span>(<span class="ident">x</span>: <span class="ident">I</span>, <span class="ident">y</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
     }
 
-    <span class="doccomment">/// Convert into fractional position.</span>
+    <span class="doccomment">/// Convert Coordinate into fractional [Position](crate::Position).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">position</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
         <span class="ident">Position</span> {
             <span class="ident">x</span>: <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">x</span>).<span class="ident">unwrap</span>(),
@@ -732,7 +664,7 @@
         }
     }
 
-    <span class="doccomment">/// Round x, y float to nearest hex coordinates</span>
+    <span class="doccomment">/// Round x, y float to nearest hex coordinates.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Return None, if exactly on the border of two hex coordinates</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nearest_lossy</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -771,7 +703,7 @@
 
     <span class="doccomment">/// Find the hex containing a pixel. The origin of the pixel coordinates</span>
     <span class="doccomment">/// is the center of the hex at (0,0) in hex coordinates.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_pixel</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cartesian</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">f3</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">3</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">f2</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">f3s</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">f3</span>.<span class="ident">sqrt</span>();
@@ -1127,21 +1059,11 @@
         <span class="ident">RangeIter::new</span>(<span class="self">self</span>, <span class="ident">radius</span>)
     }
 
-    <span class="doccomment">/// Iterator over each coordinate in a ring</span>
+    <span class="doccomment">/// Iterates in a ring around an origin at provided radius.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Example: Elements in order for Ring of radius 2, Direction ZX, CCW</span>
+    <span class="doccomment">/// Example: Elements in order for Ring of radius 2, Direction YZ, CW</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// ```norust</span>
-    <span class="doccomment">///              8</span>
-    <span class="doccomment">///            9   7</span>
-    <span class="doccomment">///         10   .   6</span>
-    <span class="doccomment">///            .   .</span>
-    <span class="doccomment">///         11   x   5</span>
-    <span class="doccomment">///            .   .</span>
-    <span class="doccomment">///          0   .   4</span>
-    <span class="doccomment">///            1   3</span>
-    <span class="doccomment">///              2</span>
-    <span class="doccomment">/// ```</span>
+    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;ring.svg&quot;</span>)]</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
     <span class="doccomment">///</span>
@@ -1159,7 +1081,19 @@
         <span class="ident">Ring::new</span>(<span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)
     }
 
-    <span class="doccomment">/// Iterator over each coordinate in a spiral</span>
+    <span class="doccomment">/// Iterates in a spiral around an origin out to the supplied radius.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Example: Elements in order for all rings from radius 0 to radius 2, Direction ZX, CCW</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ### Ring Iteration Pattern:</span>
+    <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;spiral.svg&quot;</span>)]</span>
+    <span class="doccomment">/// ```rust</span>
+    <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// for location in Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)) {</span>
+    <span class="doccomment">///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);</span>
+    <span class="doccomment">/// }</span>
+    <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spiral_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Spiral</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">Spiral::new</span>(<span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)
     }
@@ -1169,6 +1103,12 @@
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">xy</span>: (<span class="ident">I</span>, <span class="ident">I</span>)) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="ident">xy</span>;
         <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">position</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">Coordinate::nearest</span>(<span class="ident">position</span>.<span class="ident">x</span>, <span class="ident">position</span>.<span class="ident">y</span>)
     }
 }
 
