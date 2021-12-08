@@ -16,15 +16,18 @@
 
 //! Hexagonal Grid Map Utility library
 //!
-//! A lot of ideas taken from [redbloggames hexagon page][hexagon] and [Hex2d-rs][hex2d]
+//! A big thanks to [RedBlogGames hexagon page][hexagon] and [Hex2d-rs][hex2d] for providing a lot
+//! of ideas and some example code I could mutate.
+//!
+//! ## Hex Orientations
+//! ### Flat Topped:
+#![doc = include_str!("flat.svg")]
+//! ### Pointy Topped:
+#![doc = include_str!("pointy.svg")]
 //!
 //! [hexagon]: http://www.redblobgames.com/grids/hexagons/
 //! [hex2d]: https://github.com/dpc/hex2d-rs
 
-#![doc = "## Flat Topped:"]
-#![doc = include_str!("flat.svg")]
-#![doc = "## Pointy Topped:"]
-#![doc = include_str!("pointy.svg")]
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
 #![warn(missing_docs)]
@@ -41,6 +44,7 @@ mod ring;
 mod spacing;
 mod spin;
 mod spiral;
+mod storage;
 mod types;
 
 pub use self::angle::Angle;
@@ -56,6 +60,7 @@ pub use self::ring::Ring;
 pub use self::spacing::{IntegerSpacing, Spacing};
 pub use self::spin::Spin;
 pub use self::spiral::Spiral;
+pub use self::storage::SparseHexStorage;
 pub use self::types::{Float, Integer};
 
 #[cfg(test)]
@@ -331,7 +336,7 @@ mod tests {
         {
             with_test_points(|c: Coordinate| {
                 let (x, y) = c.to_cartesian_center(spacing);
-                assert_eq!(c, Coordinate::from_pixel(x, y, spacing));
+                assert_eq!(c, Coordinate::from_cartesian(x, y, spacing));
             });
         }
     }

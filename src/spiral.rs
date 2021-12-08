@@ -17,6 +17,7 @@
 use crate::{Coordinate, Integer, Ring, Spin};
 
 /// Iterates through all hexes in a hexagonal shaped spiral pattern.
+#[doc = include_str!("spiral.svg")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Spiral<I: Integer> {
@@ -27,7 +28,8 @@ pub struct Spiral<I: Integer> {
 }
 
 impl<I: Integer> Spiral<I> {
-    pub(crate) fn new(origin: &Coordinate<I>, radius: I, spin: Spin) -> Spiral<I> {
+    /// Create a new Spiral Iterator
+    pub fn new(origin: &Coordinate<I>, radius: I, spin: Spin) -> Spiral<I> {
         Spiral {
             origin: origin.clone(),
             ring_iter: origin.ring_iter(I::zero(), spin),

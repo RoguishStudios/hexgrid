@@ -14,16 +14,24 @@
 // limitations under the License.
 //
 
-use crate::{Angle, Coordinate, Direction, Integer, Spin};
+use crate::{Angle, Bearing, Coordinate, Integer, Spin};
 use std::cmp::max;
 
-/// Iterator over a ring
+/// Iterates in a ring around an origin at provided radius.
+/// ### Ring Iteration Pattern:
+/// ```rust
+/// use hexgrid::{Coordinate, Spin, Direction};
+///
+/// for location in Coordinate::from_cubic(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {
+///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);
+/// }
+/// ```
+#[doc = include_str!("ring.svg")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Ring<I: Integer> {
-    source: Coordinate<I>,
-    cur_coord: Coordinate<I>,
-    cur_dir: Direction,
+    origin: Coordinate<I>,
+    current: Bearing<I>,
     step_angle: Angle,
     r: I,
     ii: I,
@@ -58,9 +66,8 @@ impl<I: Integer> Ring<I> {
         let cur_dir = start_dir + start_angle;
 
         Ring {
-            source: origin.clone(),
-            cur_coord,
-            cur_dir,
+            origin: origin.clone(),
+            current: Bearing::new(cur_coord, cur_dir),
             step_angle,
             r: I::abs(&radius),
             ii: I::zero(),
@@ -83,7 +90,7 @@ impl<I: Integer> Iterator for Ring<I> {
         }
         if self.r.is_zero() {
             self.fuse = true;
-            return Some(self.source);
+            return Some(self.origin);
         }
 
         if self.jj >= self.r.abs() {
@@ -92,14 +99,14 @@ impl<I: Integer> Iterator for Ring<I> {
                 self.fuse = true;
                 return None;
             }
-            self.cur_dir = self.cur_dir + self.step_angle;
+            self.current.direction = self.current.direction + self.step_angle;
             self.jj = I::zero();
         }
         self.jj += I::one();
 
-        let ret = Some(self.cur_coord);
-        let cur_dir_coord: Coordinate<_> = self.cur_dir.into();
-        self.cur_coord = self.cur_coord + cur_dir_coord;
+        let ret = Some(self.current.coordinate);
+        let current_direction_offset: Coordinate<_> = self.current.direction.into();
+        self.current.coordinate = self.current.coordinate + current_direction_offset;
 
         ret
     }

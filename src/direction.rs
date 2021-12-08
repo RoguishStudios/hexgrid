@@ -19,7 +19,7 @@ use crate::{Angle, Bearing, Float, Integer};
 
 /// Direction on a hexagonal map
 ///
-/// See `Coordinate` for graph with directions.
+/// See [Coordinate](crate::Coordinate) for graph with directions.
 ///
 /// Naming convention: increasing coordinate for a given direction is first
 /// decreasing is second. The missing coordinate is unaffected by a move in
@@ -187,5 +187,13 @@ impl std::ops::Add<Angle> for Direction {
 
     fn add(self, a: Angle) -> Direction {
         Direction::from_int(self.to_int::<i8>() + a.to_int::<i8>())
+    }
+}
+
+impl std::ops::Sub<Angle> for Direction {
+    type Output = Direction;
+
+    fn sub(self, a: Angle) -> Direction {
+        Direction::from_int(self.to_int::<i8>() - a.to_int::<i8>())
     }
 }

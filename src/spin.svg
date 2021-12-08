@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="139.3548mm"
+   height="140.52191mm"
+   viewBox="0 0 139.3548 140.52191"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   sodipodi:docname="spin.svg">
+  <defs
+     id="defs2">
+    <rect
+       x="44.901279"
+       y="-52.919365"
+       width="136.842"
+       height="14.967094"
+       id="rect912" />
+    <rect
+       x="-7.4835467"
+       y="-77.508163"
+       width="120.80583"
+       height="53.453903"
+       id="rect906" />
+    <rect
+       x="26.726954"
+       y="-63.610149"
+       width="28.33057"
+       height="13.363476"
+       id="rect900" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="169.8735"
+     inkscape:cy="70.862582"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1267"
+     inkscape:window-height="1040"
+     inkscape:window-x="4048"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-19.524906,-40.781556)">
+    <path
+       sodipodi:type="star"
+       style="fill:none;stroke:currentColor;stroke-width:0.220093"
+       id="path833"
+       sodipodi:sides="6"
+       sodipodi:cx="87.168182"
+       sodipodi:cy="114.54928"
+       sodipodi:r1="39.139774"
+       sodipodi:r2="33.896034"
+       sodipodi:arg1="1.0471976"
+       sodipodi:arg2="1.5707963"
+       inkscape:flatsided="true"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 106.73807,148.44532 -39.139776,0 -19.569886,-33.89604 19.569889,-33.896042 39.139773,2e-6 19.56989,33.89604 z" />
+    <path
+       id="path835"
+       style="fill:none;stroke:currentColor;stroke-width:0.999999"
+       d="m 333.42578,154.67383 50.14844,96.75976 23.13281,-36.16797 a 211.42857,222.85715 0 0 1 141.86524,210.44922 211.42857,222.85715 0 0 1 -152.30469,213.9668 v 44.92969 A 262.8475,265.70466 0 0 0 599.99023,425.71484 262.8475,265.70466 0 0 0 430.875,177.47852 l 11.42188,-17.85547 z M 308.6582,155.9375 202.48633,160.09375 220,187.85938 A 262.8475,265.70466 0 0 0 74.294922,425.71484 262.8475,265.70466 0 0 0 272.30273,683.20703 v -45.375 a 211.42857,222.85715 0 0 1 -146.58789,-212.11719 211.42857,222.85715 0 0 1 118.16016,-200 l 15.29492,24.24805 z"
+       transform="scale(0.26458333)" />
+    <text
+       xml:space="preserve"
+       id="text898"
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect900);fill:currentColor;fill-opacity:1;stroke:none;"><tspan
+         style="visibility:hidden"
+         x="26.726562"
+         y="-40.590629"><tspan
+           dx="0 7.3897061 2.9042068 6.4233589 5.5138588 6.2631626 8.6609421 2.9042053 5.5138588">Clockwise</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:8.45484px;line-height:1.25;font-family:sans-serif;fill:currentColor;fill-opacity:1;stroke:none;stroke-width:0.211371"
+       x="61.435673"
+       y="51.500397"
+       id="text918"><tspan
+         sodipodi:role="line"
+         id="tspan916"
+         x="61.435673"
+         y="51.500397"
+         style="stroke-width:0.211371">CW</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:7.74536px;line-height:1.25;font-family:sans-serif;fill:currentColor;fill-opacity:1;stroke:none;stroke-width:0.193634"
+       x="94.082397"
+       y="50.440678"
+       id="text922"><tspan
+         sodipodi:role="line"
+         id="tspan920"
+         x="94.082397"
+         y="50.440678"
+         style="stroke-width:0.193634">CCW</tspan></text>
+  </g>
+</svg>

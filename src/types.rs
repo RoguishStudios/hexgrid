@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-/// Integer trait required by this library
+/// Integer trait used by this library.
 pub trait Integer:
     num::Signed
     + num::Integer
@@ -24,6 +24,7 @@ pub trait Integer:
     + num::NumCast
     + num::One
     + num::Zero
+    + std::hash::Hash
     + std::marker::Copy
     + std::ops::AddAssign
     + std::default::Default
@@ -39,13 +40,14 @@ impl<I> Integer for I where
         + num::NumCast
         + num::One
         + num::Zero
+        + std::hash::Hash
         + std::marker::Copy
         + std::ops::AddAssign
         + std::default::Default
 {
 }
 
-/// Float trait required by this library
+/// Float trait used by this library
 pub trait Float:
     num::Signed
     + num::Float

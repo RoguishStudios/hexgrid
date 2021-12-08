@@ -16,18 +16,20 @@
 
 use crate::{Angle, Coordinate, Direction, Integer};
 
-/// Bearing on 2d hexagonal grid (Coordinate + Direction)
+/// Coordinate and Directional Component Pair on a 2d hexagonal grid.
+///
+#[doc = include_str!("bearing.svg")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Bearing<I: Integer = i32> {
     /// Coordinate
     pub coordinate: Coordinate<I>,
-    /// `y` coordinate
+    /// Direction
     pub direction: Direction,
 }
 
 impl<I: Integer> Bearing<I> {
-    /// Create a new Position
+    /// Create a new Bearing from Coordinate and Direction
     pub fn new(coordinate: Coordinate<I>, direction: Direction) -> Bearing<I> {
         Bearing {
             coordinate,
@@ -47,6 +49,17 @@ impl<I: Integer> std::ops::Add<Coordinate<I>> for Bearing<I> {
     }
 }
 
+impl<I: Integer> std::ops::Sub<Coordinate<I>> for Bearing<I> {
+    type Output = Bearing<I>;
+
+    fn sub(self, coordinate: Coordinate<I>) -> Bearing<I> {
+        Bearing {
+            coordinate: self.coordinate - coordinate,
+            direction: self.direction,
+        }
+    }
+}
+
 impl<I: Integer> std::ops::Add<Angle> for Bearing<I> {
     type Output = Bearing<I>;
 
@@ -58,13 +71,13 @@ impl<I: Integer> std::ops::Add<Angle> for Bearing<I> {
     }
 }
 
-impl<I: Integer> std::ops::Sub<Coordinate<I>> for Bearing<I> {
+impl<I: Integer> std::ops::Sub<Angle> for Bearing<I> {
     type Output = Bearing<I>;
 
-    fn sub(self, coordinate: Coordinate<I>) -> Bearing<I> {
+    fn sub(self, angle: Angle) -> Bearing<I> {
         Bearing {
-            coordinate: self.coordinate - coordinate,
-            direction: self.direction,
+            coordinate: self.coordinate,
+            direction: self.direction - angle,
         }
     }
 }

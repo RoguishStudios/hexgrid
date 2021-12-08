@@ -16,7 +16,8 @@
 
 use crate::Direction;
 
-/// Spinning directions
+/// Spin Direction
+#[doc = include_str!("spin.svg")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub enum Spin {

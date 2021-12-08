@@ -21,49 +21,11 @@ use crate::{
 
 /// Integer Coordinate on 2d hexagonal grid
 ///
-/// ```text
-///           /\
-///         /    \
-///        |      |
-///        |      |
-///         \    /
-///           \/
-///
-///            -z
-/// +y     YZ  |  XZ     +x
-///  ---       |       ---
-///     ---    |    ---
-///        --- | ---
-///   YX      -x-    XY
-///        --- | ---
-///     ---    |    ---
-///  ---   ZX  |  ZY   ---
-/// -x         |          -y
-///            +z
-/// ```
-///
-/// Flat-topped:
-///
-/// ```text
-///            ____
-///           /    \
-///          /      \
-///          \      /
-///           \____/
-///
-///        +y       -z
-///         \       /
-///          \ YZ  /
-///       YX  \   /  XZ
-///            \ /
-///   -x--------x--------+x
-///            / \
-///       ZX  /   \ XY
-///          /  ZY \
-///         /       \
-///        +z       -y
-/// ```
-///
+/// ## Hex Orientations
+/// ### Flat Topped:
+#[doc = include_str!("flat.svg")]
+/// ### Pointy Topped:
+#[doc = include_str!("pointy.svg")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Coordinate<I: Integer = i32> {
@@ -74,12 +36,12 @@ pub struct Coordinate<I: Integer = i32> {
 }
 
 impl<I: Integer> Coordinate<I> {
-    /// Create new Coord from `x` and `y`
+    /// Create new Coordinate from `x` and `y` cubic components.
     pub fn from_cubic(x: I, y: I) -> Coordinate<I> {
         Coordinate { x, y }
     }
 
-    /// Convert into fractional position.
+    /// Convert Coordinate into fractional [Position](crate::Position).
     pub fn position<F: Float>(&self) -> Position<F> {
         Position {
             x: F::from(self.x).unwrap(),
@@ -115,7 +77,7 @@ impl<I: Integer> Coordinate<I> {
         }
     }
 
-    /// Round x, y float to nearest hex coordinates
+    /// Round x, y float to nearest hex coordinates.
     ///
     /// Return None, if exactly on the border of two hex coordinates
     pub fn nearest_lossy<F: Float>(x: F, y: F) -> Option<Coordinate<I>> {
@@ -154,7 +116,7 @@ impl<I: Integer> Coordinate<I> {
 
     /// Find the hex containing a pixel. The origin of the pixel coordinates
     /// is the center of the hex at (0,0) in hex coordinates.
-    pub fn from_pixel<F: Float>(x: F, y: F, spacing: Spacing<F>) -> Coordinate<I> {
+    pub fn from_cartesian<F: Float>(x: F, y: F, spacing: Spacing<F>) -> Coordinate<I> {
         let f3: F = F::from(3).unwrap();
         let f2: F = F::from(2).unwrap();
         let f3s: F = f3.sqrt();
@@ -510,21 +472,11 @@ impl<I: Integer> Coordinate<I> {
         RangeIter::new(self, radius)
     }
 
-    /// Iterator over each coordinate in a ring
+    /// Iterates in a ring around an origin at provided radius.
     ///
-    /// Example: Elements in order for Ring of radius 2, Direction ZX, CCW
+    /// Example: Elements in order for Ring of radius 2, Direction YZ, CW
     ///
-    /// ```norust
-    ///              8
-    ///            9   7
-    ///         10   .   6
-    ///            .   .
-    ///         11   x   5
-    ///            .   .
-    ///          0   .   4
-    ///            1   3
-    ///              2
-    /// ```
+    #[doc = include_str!("ring.svg")]
     ///
     /// ```
     ///
@@ -542,7 +494,22 @@ impl<I: Integer> Coordinate<I> {
         Ring::new(self, radius, spin)
     }
 
-    /// Iterator over each coordinate in a spiral
+    /// Iterates in a spiral around an origin out to the supplied radius.
+    ///
+    /// Example: Elements in order for all rings from radius 0 to radius 2, Direction ZX, CCW
+    ///
+    /// ### Ring Iteration Pattern:
+    #[doc = include_str!("spiral.svg")]
+    /// ```rust
+    /// use hexgrid::{Coordinate, Spin, Direction};
+    ///
+    /// let locations = Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)).collect::<Vec<_>>();
+    ///
+    /// assert_eq!(locations[0].distance(Coordinate::from_cubic(0,0)), 0);
+    /// assert_eq!(locations[1].distance(Coordinate::from_cubic(0,0)), 1);
+    /// assert_eq!(locations[7].distance(Coordinate::from_cubic(0,0)), 2);
+    ///
+    /// ```
     pub fn spiral_iter(&self, radius: I, spin: Spin) -> Spiral<I> {
         Spiral::new(self, radius, spin)
     }
@@ -552,6 +519,12 @@ impl<I: Integer> From<(I, I)> for Coordinate<I> {
     fn from(xy: (I, I)) -> Self {
         let (x, y) = xy;
         Coordinate { x, y }
+    }
+}
+
+impl<I: Integer, F: Float> From<Position<F>> for Coordinate<I> {
+    fn from(position: Position<F>) -> Self {
+        Coordinate::nearest(position.x, position.y)
     }
 }
 

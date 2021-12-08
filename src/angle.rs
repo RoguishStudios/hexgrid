@@ -53,9 +53,7 @@ impl Angle {
         ]
     }
 
-    /// Create Angle from integer in [0, 6) range
-    ///
-    /// This should probably be internal
+    /// Create Angle from integer ordinal in [0, 6) range.
     pub fn from_int<I: Integer>(i: I) -> Angle {
         match i.mod_floor(&I::from_u8(6).unwrap()).to_u8().unwrap() {
             0 => Angle::Forward,
@@ -68,9 +66,7 @@ impl Angle {
         }
     }
 
-    /// Convert to integer in [0, 6) range
-    ///
-    /// This should probably be internal
+    /// Convert angle to integer ordinal in [0, 6) range.
     pub fn to_int<I: Integer>(&self) -> I {
         I::from_u8(*self as u8).unwrap()
     }
@@ -85,11 +81,5 @@ impl Angle {
             Angle::LeftBackward => F::from(240.0).unwrap(),
             Angle::LeftForward => F::from(300.0).unwrap(),
         }
-    }
-}
-
-impl<I: Integer> From<I> for Angle {
-    fn from(i: I) -> Self {
-        Angle::from_int(i)
     }
 }
