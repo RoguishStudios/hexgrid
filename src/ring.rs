@@ -22,8 +22,8 @@ use std::cmp::max;
 /// ```rust
 /// use hexgrid::{Coordinate, Spin, Direction};
 ///
-/// for location in Coordinate::from_cubic(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {
-///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);
+/// for location in Coordinate::from_axial(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {
+///     assert_eq!(location.distance(Coordinate::from_axial(0,0)), 5);
 /// }
 /// ```
 #[doc = include_str!("ring.svg")]

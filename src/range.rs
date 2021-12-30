@@ -23,9 +23,9 @@ use std::cmp::{max, min};
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct RangeIter<I: Integer> {
     source: Coordinate<I>,
-    x: I,
-    y: I,
+    q: I,
     r: I,
+    radius: I,
     counter: usize,
 }
 
@@ -34,9 +34,9 @@ impl<I: Integer> RangeIter<I> {
     pub(crate) fn new(origin: &Coordinate<I>, radius: I) -> RangeIter<I> {
         RangeIter {
             source: origin.clone(),
-            x: -radius,
-            y: max(-radius, -(-radius) - radius),
-            r: radius,
+            q: -radius,
+            r: max(-radius, -(-radius) - radius),
+            radius,
             counter: 0,
         }
     }
@@ -46,28 +46,28 @@ impl<I: Integer> Iterator for RangeIter<I> {
     type Item = Coordinate<I>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.y > min(self.r, -self.x + self.r) {
-            if self.x >= self.r {
+        if self.r > min(self.radius, -self.q + self.radius) {
+            if self.q >= self.radius {
                 return None;
             }
-            self.x += One::one();
-            self.y = max(-self.r, -self.x - self.r);
+            self.q += One::one();
+            self.r = max(-self.radius, -self.q - self.radius);
         }
 
         let ret = Some(Coordinate {
-            x: self.source.x + self.x,
-            y: self.source.y + self.y,
+            q: self.source.q + self.q,
+            r: self.source.r + self.r,
         });
-        self.y += One::one();
+        self.r += One::one();
         self.counter += 1;
         ret
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let rc = (if self.r < Zero::zero() {
-            I::one() - self.r
+        let rc = (if self.radius < Zero::zero() {
+            I::one() - self.radius
         } else {
-            self.r
+            self.radius
         })
         .to_usize()
         .unwrap();

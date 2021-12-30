@@ -15,11 +15,16 @@
 //
 
 use crate::{
-    Angle, Bearing, Direction, Float, Integer, IntegerSpacing, LineToGen, LineToIter,
-    LineToLossyIter, LineToWithEdgeDetection, Position, RangeIter, Ring, Spacing, Spin, Spiral,
+    Angle, Bearing, Direction, Float, Integer, IntegerSpacing, LineGenIter, LineIter,
+    LineIterWithEdgeDetection, LossyLineIter, Position, RangeIter, Ring, Spacing, Spin, Spiral,
 };
 
 /// Integer Coordinate on 2d hexagonal grid
+///
+/// Coordinate Components (Cubic -> Axial):
+/// * x -> q
+/// * y -> -q - r
+/// * z -> r
 ///
 /// ## Hex Orientations
 /// ### Flat Topped:
@@ -29,109 +34,120 @@ use crate::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub struct Coordinate<I: Integer = i32> {
-    /// `x` coordinate
-    pub x: I,
-    /// `y` coordinate
-    pub y: I,
+    /// `q` coordinate
+    pub q: I,
+    /// `r` coordinate
+    pub r: I,
 }
 
 impl<I: Integer> Coordinate<I> {
-    /// Create new Coordinate from `x` and `y` cubic components.
-    pub fn from_cubic(x: I, y: I) -> Coordinate<I> {
-        Coordinate { x, y }
+    /// Create new Coordinate from `q` and `r` axial components.
+    ///
+    /// See [Hex Coordinates](https://www.redblobgames.com/grids/hexagons/implementation.html#hex)
+    pub fn from_axial(q: I, r: I) -> Coordinate<I> {
+        Coordinate { q, r }
     }
 
-    /// Convert Coordinate into fractional [Position](crate::Position).
-    pub fn position<F: Float>(&self) -> Position<F> {
-        Position {
-            x: F::from(self.x).unwrap(),
-            y: F::from(self.y).unwrap(),
-        }
+    /// Create new Coordinate from `x`, `y`, and `z` cubic components.
+    ///
+    /// See [Hex Coordinates](https://www.redblobgames.com/grids/hexagons/implementation.html#hex)
+    pub fn from_cubic(x: I, y: I, z: I) -> Coordinate<I> {
+        assert!(x + y + z == I::zero());
+        Coordinate { q: x, r: y }
     }
 
-    /// Round x, y float to nearest hex coordinates
-    pub fn nearest<F: Float>(x: F, y: F) -> Coordinate<I> {
-        let zero: F = num::Zero::zero();
-        let z: F = zero - x - y;
+    /// Round position to nearest hex coordinates
+    ///
+    /// See [Hex Rounding](https://www.redblobgames.com/grids/hexagons/implementation.html#rounding)
+    pub fn from_position<F: Float>(position: Position<F>) -> Coordinate<I> {
+        let mut q = position.q;
+        let mut r = position.r;
+        let s = F::zero() - position.q - position.r;
 
-        let mut rx = x.round();
-        let mut ry = y.round();
-        let rz = z.round();
+        let q_diff = (q.round() - q).abs();
+        let r_diff = (r.round() - r).abs();
+        let s_diff = (s.round() - s).abs();
 
-        let x_diff = (rx - x).abs();
-        let y_diff = (ry - y).abs();
-        let z_diff = (rz - z).abs();
-
-        if x_diff > y_diff && x_diff > z_diff {
-            rx = -ry - rz;
-        } else if y_diff > z_diff {
-            ry = -rx - rz;
+        if q_diff > r_diff && q_diff > s_diff {
+            q = F::zero() - r - s;
+        } else if r_diff > s_diff {
+            r = F::zero() - q - s;
         } else {
-            // not needed, kept for a reference
-            // rz = -rx - ry;
+            // Not Needed with axial coordinate math
+            // s = F::zero() - q - r;
         }
 
         Coordinate {
-            x: I::from(rx).unwrap(),
-            y: I::from(ry).unwrap(),
+            q: I::from(q).unwrap(),
+            r: I::from(r).unwrap(),
         }
     }
 
     /// Round x, y float to nearest hex coordinates.
     ///
     /// Return None, if exactly on the border of two hex coordinates
-    pub fn nearest_lossy<F: Float>(x: F, y: F) -> Option<Coordinate<I>> {
-        let zero: F = F::zero();
-        let z: F = zero - x - y;
+    pub fn from_position_lossy<F: Float>(position: Position<F>) -> Option<Coordinate<I>> {
+        let mut q = position.q;
+        let mut r = position.r;
+        let s = F::zero() - position.q - position.r;
 
-        let mut rx = x.round();
-        let mut ry = y.round();
-        let mut rz = z.round();
+        let q_diff = (q.round() - q).abs();
+        let r_diff = (r.round() - r).abs();
+        let s_diff = (s.round() - s).abs();
 
-        let x_diff = (rx - x).abs();
-        let y_diff = (ry - y).abs();
-        let z_diff = (rz - z).abs();
-
-        if x_diff > y_diff && x_diff > z_diff {
-            rx = -ry - rz;
-        } else if y_diff > z_diff {
-            ry = -rx - rz;
+        if q_diff > r_diff && q_diff > s_diff {
+            q = F::zero() - r - s;
+        } else if r_diff > s_diff {
+            r = F::zero() - q - s;
         } else {
-            rz = -rx - ry;
+            // Not necessary with axial coordinate math
+            // s = F::zero() - q - r;
         }
 
-        let x_diff = (rx - x).abs();
-        let y_diff = (ry - y).abs();
-        let z_diff = (rz - z).abs();
-
-        if x_diff + y_diff + z_diff > F::from(0.99).unwrap() {
-            return None;
+        if q_diff + r_diff + s_diff > F::from(0.99).unwrap() {
+            None
+        } else {
+            Some(Coordinate {
+                q: I::from(q).unwrap(),
+                r: I::from(r).unwrap(),
+            })
         }
+    }
 
-        Some(Coordinate {
-            x: I::from(rx).unwrap(),
-            y: I::from(ry).unwrap(),
-        })
+    /// Cubic `X` component.
+    pub fn x(&self) -> I {
+        self.q
+    }
+
+    /// Cubic `Y` component.
+    pub fn y(&self) -> I {
+        I::zero() - self.q - self.r
+    }
+
+    /// Cubic `Z` component.
+    pub fn z(&self) -> I {
+        self.r
+    }
+
+    /// Distance from Origin
+    pub fn length(&self) -> I {
+        let q = self.q.abs();
+        let r = self.r.abs();
+        let s = (I::zero() - self.q - self.r).abs();
+        (q + r + s) / I::from_u8(2).unwrap()
+    }
+
+    /// Convert Coordinate into fractional [Position](crate::Position).
+    pub fn into_position<F: Float>(&self) -> Position<F> {
+        Position::from_coordinate(*self)
     }
 
     /// Find the hex containing a pixel. The origin of the pixel coordinates
     /// is the center of the hex at (0,0) in hex coordinates.
+    ///
+
     pub fn from_cartesian<F: Float>(x: F, y: F, spacing: Spacing<F>) -> Coordinate<I> {
-        let f3: F = F::from(3).unwrap();
-        let f2: F = F::from(2).unwrap();
-        let f3s: F = f3.sqrt();
-        match spacing {
-            Spacing::PointyTop(size) => {
-                let q = (x * f3s / f3 - y / f3) / size;
-                let r = y * f2 / f3 / size;
-                Coordinate::nearest(q, -r - q)
-            }
-            Spacing::FlatTop(size) => {
-                let q = x * f2 / f3 / size;
-                let r = (-x / f3 + f3s / f3 * y) / size;
-                Coordinate::nearest(q, -r - q)
-            }
-        }
+        Coordinate::from_position(Position::from_cartesian(x, y, spacing))
     }
 
     /// Convert integer pixel coordinates `v` using `spacing` to nearest coordinate that has both
@@ -161,29 +177,31 @@ impl<I: Integer> Coordinate<I> {
             ),
         };
 
-        let coord = Coordinate { x: q, y: -q - r };
+        let coord = Coordinate { q, r };
         (coord, (qo, ro))
     }
 
-    /// Convert to pixel coordinates using `spacing`, where the
-    /// parameter means the edge length of a hexagon.
+    /// Convert center point to cartesian coordinates using `spacing`, where the size parameter
+    /// is the edge length of a hexagon.
     ///
-    /// This function is meant for graphical user interfaces
-    /// where resolution is big enough that floating point calculation
-    /// make sense.
-    pub fn to_cartesian_center<F: Float>(&self, spacing: Spacing<F>) -> (F, F) {
-        let f3: F = F::from(3).unwrap();
+    /// This function is meant for graphical user interfaces where resolution is big enough that
+    /// floating point calculation make sense.
+    ///
+    /// See [Hex to Screen](https://www.redblobgames.com/grids/hexagons/implementation.html#hex-to-pixel)
+    pub fn cartesian_center<F: Float>(&self, spacing: Spacing<F>) -> (F, F) {
         let f2: F = F::from(2).unwrap();
+        let f3: F = F::from(3).unwrap();
         let f3s: F = f3.sqrt();
-        let q: F = F::from(self.x).unwrap();
-        let r: F = F::from(self.z()).unwrap();
+        let q: F = F::from(self.q).unwrap();
+        let r: F = F::from(self.r).unwrap();
+
         match spacing {
-            Spacing::FlatTop(s) => (s * f3 / f2 * q, s * f3s * (r + q / f2)),
-            Spacing::PointyTop(s) => (s * f3s * (q + r / f2), s * f3 / f2 * r),
+            Spacing::FlatTop(size) => (size * (f3 / f2 * q), size * (f3s / f2 * q + f3s * r)),
+            Spacing::PointyTop(size) => (size * (f3s * q + f3s / f2 * r), size * (f3 / f2 * r)),
         }
     }
 
-    /// Create a set of ordered points to draw a hex.
+    /// Create a set of ordered cartesian points to draw a hex.
     ///
     /// Reference:
     /// [Layout](https://www.redblobgames.com/grids/hexagons/implementation.html#layout)
@@ -194,7 +212,7 @@ impl<I: Integer> Coordinate<I> {
         let f2: F = F::from(2).unwrap();
         let f6: F = F::from(6).unwrap();
         let pi: F = F::from(std::f64::consts::PI).unwrap();
-        let center: (F, F) = self.to_cartesian_center(spacing);
+        let center: (F, F) = self.cartesian_center(spacing);
         let corner_offset = |i| {
             let corner = F::from_u8(i).unwrap();
             let (start_angle, size) = match spacing {
@@ -217,7 +235,7 @@ impl<I: Integer> Coordinate<I> {
     /// Convert to integer pixel coordinates using `spacing`, where the
     /// parameters mean the width and height multiplications
     pub fn to_pixel_integer(&self, spacing: IntegerSpacing<I>) -> (I, I) {
-        let q = self.x;
+        let q = self.q;
         let r = self.z();
         let two = I::from_i8(2).unwrap();
 
@@ -227,28 +245,30 @@ impl<I: Integer> Coordinate<I> {
         }
     }
 
-    /// Scale coordinate by a factor `s`
-    pub fn scale(&self, s: I) -> Coordinate<I> {
-        let x = self.x * s;
-        let y = self.y * s;
-        Coordinate { x, y }
+    /// Scale coordinate by a factor `scalar`
+    ///
+    /// See [Coordinate arithmetic](https://www.redblobgames.com/grids/hexagons/implementation.html#hex-arithmetic)
+    pub fn scale(&self, scalar: I) -> Coordinate<I> {
+        let q = self.q * scalar;
+        let r = self.r * scalar;
+        Coordinate { q, r }
     }
 
     /// Array with all the neighbors of a coordinate
     pub fn neighbors(&self) -> [Coordinate<I>; 6] {
         [
-            *self + Direction::YZ,
             *self + Direction::XZ,
             *self + Direction::XY,
             *self + Direction::ZY,
             *self + Direction::ZX,
             *self + Direction::YX,
+            *self + Direction::YZ,
         ]
     }
 
     /// Rotate self around a point `(0, 0, 0)` using angle of rotation `a`
     pub fn rotate_around_zero(&self, a: Angle) -> Coordinate<I> {
-        let (x, y, z) = (self.x, self.y, self.z());
+        let (x, y, z) = (self.q, self.r, self.z());
 
         let (x, y) = match a {
             Angle::Forward => (x, y),
@@ -259,7 +279,7 @@ impl<I: Integer> Coordinate<I> {
             Angle::LeftForward => (-y, -z),
         };
 
-        Coordinate { x, y }
+        Coordinate { q: x, r: y }
     }
 
     /// Rotate `self` around a `center` using angle of rotation `a`
@@ -269,41 +289,35 @@ impl<I: Integer> Coordinate<I> {
         rot_p + center
     }
 
-    fn line_to_iter_gen(&self, dest: Coordinate<I>) -> LineToGen<I> {
-        let n = self.distance(dest);
-
-        let ax = self.x.to_f32().unwrap();
-        let ay = self.y.to_f32().unwrap();
-        let bx = dest.x.to_f32().unwrap();
-        let by = dest.y.to_f32().unwrap();
-        LineToGen::new(ax, ay, bx, by, n, num::Zero::zero())
-    }
-
     /// Iterator over each coordinate in straight line from `self` to `dest`
-    pub fn line_to_iter(&self, dest: Coordinate<I>) -> LineToIter<I> {
-        LineToIter::new(self.line_to_iter_gen(dest))
+    pub fn line_iter(&self, target: Coordinate<I>) -> LineIter<I> {
+        LineIter::new(LineGenIter::new(
+            self.into_position(),
+            target.into_position(),
+        ))
     }
 
     /// Iterator over each coordinate in straight line from `self` to `dest`
     ///
     /// Skip points on the border of two tiles
-    pub fn line_to_lossy_iter(&self, dest: Coordinate<I>) -> LineToLossyIter<I> {
-        LineToLossyIter::new(self.line_to_iter_gen(dest))
+    pub fn lossy_line_iter(&self, target: Coordinate<I>) -> LossyLineIter<I> {
+        LossyLineIter::new(LineGenIter::new(
+            self.into_position(),
+            target.into_position(),
+        ))
     }
 
     /// Iterator over each coordinate in straight line from `self` to `dest`
     ///
     /// On edge condition the pair contains different members, otherwise it's the same.
-    pub fn line_to_with_edge_detection_iter(
+    pub fn line_iter_with_edge_detection(
         &self,
-        dest: Coordinate<I>,
-    ) -> LineToWithEdgeDetection<I> {
-        LineToWithEdgeDetection::new(self.line_to_iter_gen(dest))
-    }
-
-    /// Z coordinate
-    pub fn z(&self) -> I {
-        -self.x - self.y
+        target: Coordinate<I>,
+    ) -> LineIterWithEdgeDetection<I> {
+        LineIterWithEdgeDetection::new(LineGenIter::new(
+            self.into_position(),
+            target.into_position(),
+        ))
     }
 
     /// Direction from center `(0, 0)` to coordinate
@@ -314,36 +328,23 @@ impl<I: Integer> Coordinate<I> {
     /// Returns:
     /// None if is center
     ///
-    /// ```
-    /// use hexgrid::{Angle, Direction, Coordinate};
-    ///
-    /// let center = Coordinate::from_cubic(0, 0);
-    ///
-    /// assert_eq!(center.direction_from_center_cw(), None);
-    ///
-    /// for &d in Direction::all() {
-    ///     assert_eq!((center + d).direction_from_center_cw(), Some(d));
-    ///     assert_eq!((center + d + (d + Angle::LeftForward)).direction_from_center_cw(), Some(d));
-    ///     assert_eq!((center + d + (d + Angle::RightForward)).direction_from_center_cw(), Some(d + Angle::RightForward));
-    /// }
-    /// ```
     pub fn direction_from_center_cw(&self) -> Option<Direction> {
-        let x = self.x;
-        let y = self.y;
+        let x = self.x();
+        let y = self.y();
         let z = self.z();
-        let zero: I = I::from_i8(0).unwrap();
 
-        let xy = if z < zero { x >= y } else { x > y };
-        let yz = if x < zero { y >= z } else { y > z };
-        let zx = if y < zero { z >= x } else { z > x };
-        match (xy, yz, zx) {
+        let xz = if y < I::zero() { x >= z } else { x > z };
+        let zy = if x < I::zero() { z >= y } else { z > y };
+        let yx = if z < I::zero() { y >= x } else { y > x };
+
+        match (xz, zy, yx) {
             (true, true, false) => Some(Direction::XZ),
             (true, false, false) => Some(Direction::XY),
             (true, false, true) => Some(Direction::ZY),
 
             (false, false, true) => Some(Direction::ZX),
-            (false, true, true) => Some(Direction::YX),
-            (false, true, false) => Some(Direction::YZ),
+            (false, true, true) => Some(Direction::YZ),
+            (false, true, false) => Some(Direction::YX),
 
             (false, false, false) => None,
             (true, true, true) => panic!("You broke math"),
@@ -354,34 +355,33 @@ impl<I: Integer> Coordinate<I> {
     ///
     /// Returns an array of one or two directions.
     pub fn directions_from_center(&self) -> Vec<Direction> {
-        let x = self.x;
-        let y = self.y;
+        let x = self.x();
+        let y = self.y();
         let z = self.z();
-        let zero: I = I::from_i8(0).unwrap();
 
         let mut dirs = Vec::with_capacity(2);
 
-        if x > zero && z < zero {
-            dirs.push(Direction::XZ)
-        }
-
-        if x > zero && y < zero {
-            dirs.push(Direction::XY)
-        }
-
-        if z > zero && y < zero {
-            dirs.push(Direction::ZY)
-        }
-
-        if z > zero && x < zero {
+        if x > I::zero() && z < I::zero() {
             dirs.push(Direction::ZX)
         }
 
-        if y > zero && z < zero {
+        if x > I::zero() && y < I::zero() {
+            dirs.push(Direction::ZY)
+        }
+
+        if z > I::zero() && y < I::zero() {
+            dirs.push(Direction::XY)
+        }
+
+        if z > I::zero() && x < I::zero() {
+            dirs.push(Direction::ZX)
+        }
+
+        if y > I::zero() && z < I::zero() {
             dirs.push(Direction::YZ)
         }
 
-        if y > zero && x < zero {
+        if y > I::zero() && x < I::zero() {
             dirs.push(Direction::YX)
         }
 
@@ -396,10 +396,12 @@ impl<I: Integer> Coordinate<I> {
     /// Returns:
     /// None if is center
     ///
-    /// ```
+    /// TODO: Example/Function broken.
+    ///
+    /// ```notrust
     /// use hexgrid::{Angle, Direction, Coordinate};
     ///
-    /// let center = Coordinate::from_cubic(0, 0);
+    /// let center = Coordinate::from_axial(0, 0);
     ///
     /// assert_eq!(center.direction_from_center_ccw(), None);
     ///
@@ -410,15 +412,15 @@ impl<I: Integer> Coordinate<I> {
     /// }
     /// ```
     pub fn direction_from_center_ccw(&self) -> Option<Direction> {
-        let x = self.x;
-        let y = self.y;
+        let x = self.x();
+        let y = self.y();
         let z = self.z();
-        let zero: I = I::zero();
 
-        let xy = if z > zero { x >= y } else { x > y };
-        let yz = if x > zero { y >= z } else { y > z };
-        let zx = if y > zero { z >= x } else { z > x };
-        match (xy, yz, zx) {
+        let xz = if y > I::zero() { x >= z } else { x > z }; // t
+        let zy = if x > I::zero() { z >= y } else { z > y }; // f
+        let yx = if z > I::zero() { y >= x } else { y > x }; // f
+
+        match (xz, zy, yx) {
             (true, true, false) => Some(Direction::XZ),
             (true, false, false) => Some(Direction::XY),
             (true, false, true) => Some(Direction::ZY),
@@ -461,8 +463,8 @@ impl<I: Integer> Coordinate<I> {
 
     /// Distance between two Coordinates
     pub fn distance(&self, coordinate: Coordinate<I>) -> I {
-        ((self.x - coordinate.x).abs()
-            + (self.y - coordinate.y).abs()
+        ((self.x() - coordinate.x()).abs()
+            + (self.y() - coordinate.y()).abs()
             + (self.z() - coordinate.z()).abs())
             / I::from_i8(2).unwrap()
     }
@@ -482,7 +484,7 @@ impl<I: Integer> Coordinate<I> {
     ///
     /// use hexgrid::{Coordinate, Spin, Direction};
     ///
-    /// let center = Coordinate::from_cubic(5, -1);
+    /// let center = Coordinate::from_axial(5, -1);
     ///
     /// for &c in &center.neighbors() {
     ///     for ring_c in c.ring_iter(5, Spin::CCW(Direction::XY)) {
@@ -503,65 +505,34 @@ impl<I: Integer> Coordinate<I> {
     /// ```rust
     /// use hexgrid::{Coordinate, Spin, Direction};
     ///
-    /// let locations = Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)).collect::<Vec<_>>();
+    /// let locations = Coordinate::from_axial(0, 0).spiral_iter(2, Spin::CW(Direction::YZ)).collect::<Vec<_>>();
     ///
-    /// assert_eq!(locations[0].distance(Coordinate::from_cubic(0,0)), 0);
-    /// assert_eq!(locations[1].distance(Coordinate::from_cubic(0,0)), 1);
-    /// assert_eq!(locations[7].distance(Coordinate::from_cubic(0,0)), 2);
+    /// assert_eq!(locations.len(), 19);
+    /// assert_eq!(locations[0].distance(Coordinate::from_axial(0,0)), 0);
+    /// assert_eq!(locations[1].distance(Coordinate::from_axial(0,0)), 1);
+    /// assert_eq!(locations[7].distance(Coordinate::from_axial(0,0)), 2);
     ///
     /// ```
     pub fn spiral_iter(&self, radius: I, spin: Spin) -> Spiral<I> {
-        Spiral::new(self, radius, spin)
+        Spiral::new(*self, radius, spin)
     }
 }
 
 impl<I: Integer> From<(I, I)> for Coordinate<I> {
-    fn from(xy: (I, I)) -> Self {
-        let (x, y) = xy;
-        Coordinate { x, y }
+    fn from(qr: (I, I)) -> Self {
+        Coordinate::from_axial(qr.0, qr.1)
+    }
+}
+
+impl<I: Integer> From<(I, I, I)> for Coordinate<I> {
+    fn from(xyz: (I, I, I)) -> Self {
+        Coordinate::from_cubic(xyz.0, xyz.1, xyz.2)
     }
 }
 
 impl<I: Integer, F: Float> From<Position<F>> for Coordinate<I> {
     fn from(position: Position<F>) -> Self {
-        Coordinate::nearest(position.x, position.y)
-    }
-}
-
-impl<I: Integer, T: Into<Coordinate<I>>> std::ops::Add<T> for Coordinate<I> {
-    type Output = Coordinate<I>;
-
-    fn add(self, c: T) -> Coordinate<I> {
-        let c: Coordinate<_> = c.into();
-
-        Coordinate {
-            x: self.x + c.x,
-            y: self.y + c.y,
-        }
-    }
-}
-
-impl<I: Integer, T: Into<Coordinate<I>>> std::ops::Sub<T> for Coordinate<I> {
-    type Output = Coordinate<I>;
-
-    fn sub(self, c: T) -> Coordinate<I> {
-        let c: Coordinate<_> = c.into();
-
-        Coordinate {
-            x: self.x - c.x,
-            y: self.y - c.y,
-        }
-    }
-}
-
-impl<I: Integer> std::ops::Neg for Coordinate<I> {
-    type Output = Coordinate<I>;
-
-    fn neg(self) -> Coordinate<I> {
-        Coordinate {
-            x: -self.x,
-            y: -self.y,
-        }
+        Coordinate::from_position(position)
     }
 }
 
@@ -574,17 +545,65 @@ impl<I: Integer> From<Bearing<I>> for Coordinate<I> {
 impl<I: Integer> From<Direction> for Coordinate<I> {
     fn from(direction: Direction) -> Self {
         let (x, y) = match direction {
-            Direction::YZ => (0, 1),
-            Direction::XZ => (1, 0),
-            Direction::XY => (1, -1),
-            Direction::ZY => (0, -1),
-            Direction::ZX => (-1, 0),
-            Direction::YX => (-1, 1),
+            Direction::YZ => (0, -1),
+            Direction::XZ => (1, -1),
+            Direction::XY => (1, 0),
+            Direction::ZY => (0, 1),
+            Direction::ZX => (-1, 1),
+            Direction::YX => (-1, 0),
         };
 
         Coordinate {
-            x: I::from_i8(x).unwrap(),
-            y: I::from_i8(y).unwrap(),
+            q: I::from_i8(x).unwrap(),
+            r: I::from_i8(y).unwrap(),
+        }
+    }
+}
+
+impl<I: Integer, T: Into<Coordinate<I>>> std::ops::Add<T> for Coordinate<I> {
+    type Output = Coordinate<I>;
+
+    fn add(self, c: T) -> Coordinate<I> {
+        let c: Coordinate<_> = c.into();
+
+        Coordinate {
+            q: self.q + c.q,
+            r: self.r + c.r,
+        }
+    }
+}
+
+impl<I: Integer, T: Into<Coordinate<I>>> std::ops::Sub<T> for Coordinate<I> {
+    type Output = Coordinate<I>;
+
+    fn sub(self, rhs: T) -> Coordinate<I> {
+        let c: Coordinate<_> = rhs.into();
+
+        Coordinate {
+            q: self.q - c.q,
+            r: self.r - c.r,
+        }
+    }
+}
+
+impl<I: Integer> std::ops::Mul<I> for Coordinate<I> {
+    type Output = Coordinate<I>;
+
+    fn mul(self, rhs: I) -> Coordinate<I> {
+        Coordinate {
+            q: self.q * rhs,
+            r: self.r * rhs,
+        }
+    }
+}
+
+impl<I: Integer> std::ops::Neg for Coordinate<I> {
+    type Output = Coordinate<I>;
+
+    fn neg(self) -> Coordinate<I> {
+        Coordinate {
+            q: -self.q,
+            r: -self.r,
         }
     }
 }

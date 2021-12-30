@@ -15,87 +15,79 @@
 //
 // See LICENSE file for more information
 
-use crate::{Coordinate, Integer};
-use num::{One, Zero};
+use crate::{Coordinate, Float, Integer, Position};
 use std::iter;
 
-/// Generic iterator over a line returns x, y values
+/// Generic iterator over a line returns [Position](crate::Position)s.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
-pub struct LineToGen<I: Integer> {
-    ax: f32,
-    ay: f32,
-    bx: f32,
-    by: f32,
+pub struct LineGenIter<I: Integer, F: Float> {
+    origin: Position<F>,
+    target: Position<F>,
     n: I,
     i: I,
 }
 
-impl<I: Integer> LineToGen<I> {
-    pub fn new(ax: f32, ay: f32, bx: f32, by: f32, n: I, i: I) -> LineToGen<I> {
-        LineToGen {
-            ax,
-            ay,
-            bx,
-            by,
+impl<I: Integer, F: Float> LineGenIter<I, F> {
+    pub(crate) fn new(origin: Position<F>, target: Position<F>) -> LineGenIter<I, F> {
+        let n = I::from(origin.distance(target)).unwrap();
+        let i = I::zero();
+        LineGenIter {
+            origin,
+            target,
             n,
             i,
         }
     }
 }
 
-impl<I: Integer> Iterator for LineToGen<I> {
-    type Item = (f32, f32);
+impl<I: Integer, F: Float> Iterator for LineGenIter<I, F> {
+    type Item = Position<F>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.n == Zero::zero() {
-            if self.i == Zero::zero() {
-                self.i += One::one();
-                return Some((self.ax, self.ay));
-            } else {
-                return None;
-            }
-        }
-
         if self.i > self.n {
-            return None;
+            None
+        } else if self.n == I::zero() && self.i == I::zero() {
+            self.i += I::one();
+            Some(self.origin)
+        } else {
+            let d = F::from(self.i).unwrap() / F::from(self.n).unwrap();
+            self.i += I::one();
+            Some(Position::from_axial(
+                self.origin.q + (self.target.q - self.origin.q) * d,
+                self.origin.q + (self.target.r - self.origin.r) * d,
+            ))
         }
-
-        let d = self.i.to_f32().unwrap() / self.n.to_f32().unwrap();
-        let x = self.ax + (self.bx - self.ax) * d;
-        let y = self.ay + (self.by - self.ay) * d;
-        self.i += One::one();
-        Some((x, y))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let origin = Coordinate::<I>::nearest(self.ax, self.ay);
-        let dest = Coordinate::nearest(self.bx, self.by);
-        let total_size = origin.distance(dest) + One::one();
-        let len = total_size - self.i;
-        let len = len.to_usize().unwrap();
+        let origin = Coordinate::from_position(self.origin);
+        let target = Coordinate::from_position(self.target);
+        let total_size = I::one() + origin.distance(target);
+        let len = (total_size - self.i).to_usize().unwrap();
         (len, Some(len))
     }
 }
 
-impl<I: Integer> std::iter::FusedIterator for LineToGen<I> {}
-impl<I: Integer> std::iter::ExactSizeIterator for LineToGen<I> {}
+impl<I: Integer, F: Float> std::iter::FusedIterator for LineGenIter<I, F> {}
+impl<I: Integer, F: Float> std::iter::ExactSizeIterator for LineGenIter<I, F> {}
 
 /// An iterator over an a line of Coordinates
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
-pub struct LineToIter<I: Integer>(LineToGen<I>);
+pub struct LineIter<I: Integer, F: Float = f64>(LineGenIter<I, F>);
 
-impl<I: Integer> LineToIter<I> {
-    pub(crate) fn new(gen: LineToGen<I>) -> LineToIter<I> {
-        LineToIter(gen)
+impl<I: Integer, F: Float> LineIter<I, F> {
+    pub(crate) fn new(gen: LineGenIter<I, F>) -> LineIter<I, F> {
+        LineIter(gen)
     }
 }
 
-impl<I: Integer> Iterator for LineToIter<I> {
+impl<I: Integer, F: Float> Iterator for LineIter<I, F> {
     type Item = Coordinate<I>;
+
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|(x, y)| Coordinate::nearest(x, y))
+        self.0.next().map(Coordinate::from_position)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -103,25 +95,25 @@ impl<I: Integer> Iterator for LineToIter<I> {
     }
 }
 
-impl<I: Integer> iter::FusedIterator for LineToIter<I> {}
-impl<I: Integer> iter::ExactSizeIterator for LineToIter<I> {}
+impl<I: Integer, F: Float> iter::FusedIterator for LineIter<I, F> {}
+impl<I: Integer, F: Float> iter::ExactSizeIterator for LineIter<I, F> {}
 
 /// An iterator over an a line of Coordinates, using a lossy algorithm
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
-pub struct LineToLossyIter<I: Integer>(LineToGen<I>);
+pub struct LossyLineIter<I: Integer, F: Float = f64>(LineGenIter<I, F>);
 
-impl<I: Integer> LineToLossyIter<I> {
-    pub(crate) fn new(gen: LineToGen<I>) -> LineToLossyIter<I> {
-        LineToLossyIter(gen)
+impl<I: Integer, F: Float> LossyLineIter<I, F> {
+    pub(crate) fn new(gen: LineGenIter<I, F>) -> LossyLineIter<I, F> {
+        LossyLineIter(gen)
     }
 }
 
-impl<I: Integer> Iterator for LineToLossyIter<I> {
+impl<I: Integer, F: Float> Iterator for LossyLineIter<I, F> {
     type Item = Coordinate<I>;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let c = self.0.next().map(|(x, y)| Coordinate::nearest_lossy(x, y));
+            let c = self.0.next().map(Coordinate::from_position_lossy);
             match c {
                 Some(c @ Some(_)) => return c,
                 Some(None) => continue,
@@ -135,26 +127,29 @@ impl<I: Integer> Iterator for LineToLossyIter<I> {
     }
 }
 
-impl<I: Integer> iter::FusedIterator for LineToLossyIter<I> {}
+impl<I: Integer, F: Float> iter::FusedIterator for LossyLineIter<I, F> {}
+impl<I: Integer, F: Float> iter::ExactSizeIterator for LossyLineIter<I, F> {}
 
 /// An iterator over an a line of Coordinates, with edge detection
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, PartialEq, Debug, PartialOrd)]
-pub struct LineToWithEdgeDetection<I: Integer>(LineToGen<I>);
+pub struct LineIterWithEdgeDetection<I: Integer, F: Float = f64>(LineGenIter<I, F>);
 
-impl<I: Integer> LineToWithEdgeDetection<I> {
-    pub(crate) fn new(gen: LineToGen<I>) -> LineToWithEdgeDetection<I> {
-        LineToWithEdgeDetection(gen)
+impl<I: Integer, F: Float> LineIterWithEdgeDetection<I, F> {
+    pub(crate) fn new(gen: LineGenIter<I, F>) -> LineIterWithEdgeDetection<I, F> {
+        LineIterWithEdgeDetection(gen)
     }
 }
 
-impl<I: Integer> Iterator for LineToWithEdgeDetection<I> {
+impl<I: Integer, F: Float> Iterator for LineIterWithEdgeDetection<I, F> {
     type Item = (Coordinate<I>, Coordinate<I>);
+
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|(x, y)| {
+        let delta: F = F::from(0.000001).unwrap();
+        self.0.next().map(|p| {
             (
-                Coordinate::nearest(x + 0.000001, y + 0.000001),
-                Coordinate::nearest(x - 0.000001, y - 0.000001),
+                Position::from_axial(p.q + delta, p.r + delta).into_coordinate(),
+                Position::from_axial(p.q - delta, p.r - delta).into_coordinate(),
             )
         })
     }
@@ -164,5 +159,5 @@ impl<I: Integer> Iterator for LineToWithEdgeDetection<I> {
     }
 }
 
-impl<I: Integer> iter::FusedIterator for LineToWithEdgeDetection<I> {}
-impl<I: Integer> iter::ExactSizeIterator for LineToWithEdgeDetection<I> {}
+impl<I: Integer, F: Float> iter::FusedIterator for LineIterWithEdgeDetection<I, F> {}
+impl<I: Integer, F: Float> iter::ExactSizeIterator for LineIterWithEdgeDetection<I, F> {}

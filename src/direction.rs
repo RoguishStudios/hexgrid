@@ -16,28 +16,36 @@
 
 use crate::spin::Spin;
 use crate::{Angle, Bearing, Float, Integer};
+use std::fmt::Formatter;
 
-/// Direction on a hexagonal map
+/// Cubic Direction on a hexagonal map.
 ///
 /// See [Coordinate](crate::Coordinate) for graph with directions.
 ///
 /// Naming convention: increasing coordinate for a given direction is first
 /// decreasing is second. The missing coordinate is unaffected by a move in
 /// a given direction.
+///
+/// ## Hex Orientations
+/// ### Flat Topped:
+#[doc = include_str!("flat.svg")]
+/// ### Pointy Topped:
+#[doc = include_str!("pointy.svg")]
+///
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 pub enum Direction {
     /// +Y -Z
     YZ,
-    /// -Z +X
+    /// +X -Z
     XZ,
     /// +X -Y
     XY,
-    /// -Y +Z
+    /// +Z -Y
     ZY,
     /// +Z -X
     ZX,
-    /// -X +Y
+    /// +Y -X
     YX,
 }
 
@@ -126,12 +134,12 @@ impl Direction {
     pub fn to_radians_pointy<T: Float>(&self) -> T {
         use std::f64::consts::PI;
         T::from(match *self {
-            Direction::YZ => PI * (5.5 / 3.0),
             Direction::XZ => PI * (0.5 / 3.0),
             Direction::XY => PI * (1.5 / 3.0),
             Direction::ZY => PI * (2.5 / 3.0),
             Direction::ZX => PI * (3.5 / 3.0),
             Direction::YX => PI * (4.5 / 3.0),
+            Direction::YZ => PI * (5.5 / 3.0),
         })
         .unwrap()
     }
@@ -139,6 +147,12 @@ impl Direction {
     /// Convert to angle for flat-topped map, in radians, grows clockwise, 0.0 points up
     pub fn to_radians_flat<T: Float>(&self) -> T {
         self.to_radians_pointy::<T>() + T::from(std::f64::consts::PI * (0.5 / 3.0)).unwrap()
+    }
+}
+
+impl std::fmt::Display for Direction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
@@ -172,12 +186,12 @@ impl std::ops::Neg for Direction {
 
     fn neg(self) -> Direction {
         match self {
-            Direction::YZ => Direction::ZY,
             Direction::XZ => Direction::ZX,
             Direction::XY => Direction::YX,
             Direction::ZY => Direction::YZ,
             Direction::ZX => Direction::XZ,
             Direction::YX => Direction::XY,
+            Direction::YZ => Direction::ZY,
         }
     }
 }

@@ -24,10 +24,11 @@ pub trait Integer:
     + num::NumCast
     + num::One
     + num::Zero
+    + std::default::Default
+    + std::fmt::Debug
     + std::hash::Hash
     + std::marker::Copy
     + std::ops::AddAssign
-    + std::default::Default
 {
 }
 
@@ -40,10 +41,11 @@ impl<I> Integer for I where
         + num::NumCast
         + num::One
         + num::Zero
+        + std::default::Default
+        + std::fmt::Debug
         + std::hash::Hash
         + std::marker::Copy
         + std::ops::AddAssign
-        + std::default::Default
 {
 }
 
