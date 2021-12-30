@@ -588,6 +588,25 @@
 <span id="588">588</span>
 <span id="589">589</span>
 <span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -605,11 +624,16 @@
 <span class="comment">//</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">Angle</span>, <span class="ident">Bearing</span>, <span class="ident">Direction</span>, <span class="ident">Float</span>, <span class="ident">Integer</span>, <span class="ident">IntegerSpacing</span>, <span class="ident">LineToGen</span>, <span class="ident">LineToIter</span>,
-    <span class="ident">LineToLossyIter</span>, <span class="ident">LineToWithEdgeDetection</span>, <span class="ident">Position</span>, <span class="ident">RangeIter</span>, <span class="ident">Ring</span>, <span class="ident">Spacing</span>, <span class="ident">Spin</span>, <span class="ident">Spiral</span>,
+    <span class="ident">Angle</span>, <span class="ident">Bearing</span>, <span class="ident">Direction</span>, <span class="ident">Float</span>, <span class="ident">Integer</span>, <span class="ident">IntegerSpacing</span>, <span class="ident">LineGenIter</span>, <span class="ident">LineIter</span>,
+    <span class="ident">LineIterWithEdgeDetection</span>, <span class="ident">LossyLineIter</span>, <span class="ident">Position</span>, <span class="ident">RangeIter</span>, <span class="ident">Ring</span>, <span class="ident">Spacing</span>, <span class="ident">Spin</span>, <span class="ident">Spiral</span>,
 };
 
 <span class="doccomment">/// Integer Coordinate on 2d hexagonal grid</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Coordinate Components (Cubic -&gt; Axial):</span>
+<span class="doccomment">/// * x -&gt; q</span>
+<span class="doccomment">/// * y -&gt; -q - r</span>
+<span class="doccomment">/// * z -&gt; r</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## Hex Orientations</span>
 <span class="doccomment">/// ### Flat Topped:</span>
@@ -619,109 +643,120 @@
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Debug</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span> <span class="op">=</span> <span class="ident">i32</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// `x` coordinate</span>
-    <span class="kw">pub</span> <span class="ident">x</span>: <span class="ident">I</span>,
-    <span class="doccomment">/// `y` coordinate</span>
-    <span class="kw">pub</span> <span class="ident">y</span>: <span class="ident">I</span>,
+    <span class="doccomment">/// `q` coordinate</span>
+    <span class="kw">pub</span> <span class="ident">q</span>: <span class="ident">I</span>,
+    <span class="doccomment">/// `r` coordinate</span>
+    <span class="kw">pub</span> <span class="ident">r</span>: <span class="ident">I</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Create new Coordinate from `x` and `y` cubic components.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cubic</span>(<span class="ident">x</span>: <span class="ident">I</span>, <span class="ident">y</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
+    <span class="doccomment">/// Create new Coordinate from `q` and `r` axial components.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See [Hex Coordinates](https://www.redblobgames.com/grids/hexagons/implementation.html#hex)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_axial</span>(<span class="ident">q</span>: <span class="ident">I</span>, <span class="ident">r</span>: <span class="ident">I</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">Coordinate</span> { <span class="ident">q</span>, <span class="ident">r</span> }
     }
 
-    <span class="doccomment">/// Convert Coordinate into fractional [Position](crate::Position).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">position</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
-        <span class="ident">Position</span> {
-            <span class="ident">x</span>: <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">x</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">y</span>: <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">y</span>).<span class="ident">unwrap</span>(),
-        }
+    <span class="doccomment">/// Create new Coordinate from `x`, `y`, and `z` cubic components.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See [Hex Coordinates](https://www.redblobgames.com/grids/hexagons/implementation.html#hex)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cubic</span>(<span class="ident">x</span>: <span class="ident">I</span>, <span class="ident">y</span>: <span class="ident">I</span>, <span class="ident">z</span>: <span class="ident">I</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="macro">assert!</span>(<span class="ident">x</span> <span class="op">+</span> <span class="ident">y</span> <span class="op">+</span> <span class="ident">z</span> <span class="op">==</span> <span class="ident">I::zero</span>());
+        <span class="ident">Coordinate</span> { <span class="ident">q</span>: <span class="ident">x</span>, <span class="ident">r</span>: <span class="ident">y</span> }
     }
 
-    <span class="doccomment">/// Round x, y float to nearest hex coordinates</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nearest</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">num::Zero::zero</span>();
-        <span class="kw">let</span> <span class="ident">z</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">zero</span> <span class="op">-</span> <span class="ident">x</span> <span class="op">-</span> <span class="ident">y</span>;
+    <span class="doccomment">/// Round position to nearest hex coordinates</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See [Hex Rounding](https://www.redblobgames.com/grids/hexagons/implementation.html#rounding)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_position</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">position</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">q</span> <span class="op">=</span> <span class="ident">position</span>.<span class="ident">q</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">position</span>.<span class="ident">r</span>;
+        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">position</span>.<span class="ident">q</span> <span class="op">-</span> <span class="ident">position</span>.<span class="ident">r</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rx</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">round</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ry</span> <span class="op">=</span> <span class="ident">y</span>.<span class="ident">round</span>();
-        <span class="kw">let</span> <span class="ident">rz</span> <span class="op">=</span> <span class="ident">z</span>.<span class="ident">round</span>();
+        <span class="kw">let</span> <span class="ident">q_diff</span> <span class="op">=</span> (<span class="ident">q</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">q</span>).<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">r_diff</span> <span class="op">=</span> (<span class="ident">r</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">r</span>).<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">s_diff</span> <span class="op">=</span> (<span class="ident">s</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">s</span>).<span class="ident">abs</span>();
 
-        <span class="kw">let</span> <span class="ident">x_diff</span> <span class="op">=</span> (<span class="ident">rx</span> <span class="op">-</span> <span class="ident">x</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">y_diff</span> <span class="op">=</span> (<span class="ident">ry</span> <span class="op">-</span> <span class="ident">y</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">z_diff</span> <span class="op">=</span> (<span class="ident">rz</span> <span class="op">-</span> <span class="ident">z</span>).<span class="ident">abs</span>();
-
-        <span class="kw">if</span> <span class="ident">x_diff</span> <span class="op">&gt;</span> <span class="ident">y_diff</span> <span class="op">&amp;&amp;</span> <span class="ident">x_diff</span> <span class="op">&gt;</span> <span class="ident">z_diff</span> {
-            <span class="ident">rx</span> <span class="op">=</span> <span class="op">-</span><span class="ident">ry</span> <span class="op">-</span> <span class="ident">rz</span>;
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">y_diff</span> <span class="op">&gt;</span> <span class="ident">z_diff</span> {
-            <span class="ident">ry</span> <span class="op">=</span> <span class="op">-</span><span class="ident">rx</span> <span class="op">-</span> <span class="ident">rz</span>;
+        <span class="kw">if</span> <span class="ident">q_diff</span> <span class="op">&gt;</span> <span class="ident">r_diff</span> <span class="op">&amp;&amp;</span> <span class="ident">q_diff</span> <span class="op">&gt;</span> <span class="ident">s_diff</span> {
+            <span class="ident">q</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">r</span> <span class="op">-</span> <span class="ident">s</span>;
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">r_diff</span> <span class="op">&gt;</span> <span class="ident">s_diff</span> {
+            <span class="ident">r</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">q</span> <span class="op">-</span> <span class="ident">s</span>;
         } <span class="kw">else</span> {
-            <span class="comment">// not needed, kept for a reference</span>
-            <span class="comment">// rz = -rx - ry;</span>
+            <span class="comment">// Not Needed with axial coordinate math</span>
+            <span class="comment">// s = F::zero() - q - r;</span>
         }
 
         <span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="ident">I::from</span>(<span class="ident">rx</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">y</span>: <span class="ident">I::from</span>(<span class="ident">ry</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">q</span>: <span class="ident">I::from</span>(<span class="ident">q</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">r</span>: <span class="ident">I::from</span>(<span class="ident">r</span>).<span class="ident">unwrap</span>(),
         }
     }
 
     <span class="doccomment">/// Round x, y float to nearest hex coordinates.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Return None, if exactly on the border of two hex coordinates</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nearest_lossy</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::zero</span>();
-        <span class="kw">let</span> <span class="ident">z</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">zero</span> <span class="op">-</span> <span class="ident">x</span> <span class="op">-</span> <span class="ident">y</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_position_lossy</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">position</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">q</span> <span class="op">=</span> <span class="ident">position</span>.<span class="ident">q</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">position</span>.<span class="ident">r</span>;
+        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">position</span>.<span class="ident">q</span> <span class="op">-</span> <span class="ident">position</span>.<span class="ident">r</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rx</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">round</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ry</span> <span class="op">=</span> <span class="ident">y</span>.<span class="ident">round</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rz</span> <span class="op">=</span> <span class="ident">z</span>.<span class="ident">round</span>();
+        <span class="kw">let</span> <span class="ident">q_diff</span> <span class="op">=</span> (<span class="ident">q</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">q</span>).<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">r_diff</span> <span class="op">=</span> (<span class="ident">r</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">r</span>).<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">s_diff</span> <span class="op">=</span> (<span class="ident">s</span>.<span class="ident">round</span>() <span class="op">-</span> <span class="ident">s</span>).<span class="ident">abs</span>();
 
-        <span class="kw">let</span> <span class="ident">x_diff</span> <span class="op">=</span> (<span class="ident">rx</span> <span class="op">-</span> <span class="ident">x</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">y_diff</span> <span class="op">=</span> (<span class="ident">ry</span> <span class="op">-</span> <span class="ident">y</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">z_diff</span> <span class="op">=</span> (<span class="ident">rz</span> <span class="op">-</span> <span class="ident">z</span>).<span class="ident">abs</span>();
-
-        <span class="kw">if</span> <span class="ident">x_diff</span> <span class="op">&gt;</span> <span class="ident">y_diff</span> <span class="op">&amp;&amp;</span> <span class="ident">x_diff</span> <span class="op">&gt;</span> <span class="ident">z_diff</span> {
-            <span class="ident">rx</span> <span class="op">=</span> <span class="op">-</span><span class="ident">ry</span> <span class="op">-</span> <span class="ident">rz</span>;
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">y_diff</span> <span class="op">&gt;</span> <span class="ident">z_diff</span> {
-            <span class="ident">ry</span> <span class="op">=</span> <span class="op">-</span><span class="ident">rx</span> <span class="op">-</span> <span class="ident">rz</span>;
+        <span class="kw">if</span> <span class="ident">q_diff</span> <span class="op">&gt;</span> <span class="ident">r_diff</span> <span class="op">&amp;&amp;</span> <span class="ident">q_diff</span> <span class="op">&gt;</span> <span class="ident">s_diff</span> {
+            <span class="ident">q</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">r</span> <span class="op">-</span> <span class="ident">s</span>;
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">r_diff</span> <span class="op">&gt;</span> <span class="ident">s_diff</span> {
+            <span class="ident">r</span> <span class="op">=</span> <span class="ident">F::zero</span>() <span class="op">-</span> <span class="ident">q</span> <span class="op">-</span> <span class="ident">s</span>;
         } <span class="kw">else</span> {
-            <span class="ident">rz</span> <span class="op">=</span> <span class="op">-</span><span class="ident">rx</span> <span class="op">-</span> <span class="ident">ry</span>;
+            <span class="comment">// Not necessary with axial coordinate math</span>
+            <span class="comment">// s = F::zero() - q - r;</span>
         }
 
-        <span class="kw">let</span> <span class="ident">x_diff</span> <span class="op">=</span> (<span class="ident">rx</span> <span class="op">-</span> <span class="ident">x</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">y_diff</span> <span class="op">=</span> (<span class="ident">ry</span> <span class="op">-</span> <span class="ident">y</span>).<span class="ident">abs</span>();
-        <span class="kw">let</span> <span class="ident">z_diff</span> <span class="op">=</span> (<span class="ident">rz</span> <span class="op">-</span> <span class="ident">z</span>).<span class="ident">abs</span>();
-
-        <span class="kw">if</span> <span class="ident">x_diff</span> <span class="op">+</span> <span class="ident">y_diff</span> <span class="op">+</span> <span class="ident">z_diff</span> <span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">0.99</span>).<span class="ident">unwrap</span>() {
-            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        <span class="kw">if</span> <span class="ident">q_diff</span> <span class="op">+</span> <span class="ident">r_diff</span> <span class="op">+</span> <span class="ident">s_diff</span> <span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">0.99</span>).<span class="ident">unwrap</span>() {
+            <span class="prelude-val">None</span>
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">Coordinate</span> {
+                <span class="ident">q</span>: <span class="ident">I::from</span>(<span class="ident">q</span>).<span class="ident">unwrap</span>(),
+                <span class="ident">r</span>: <span class="ident">I::from</span>(<span class="ident">r</span>).<span class="ident">unwrap</span>(),
+            })
         }
+    }
 
-        <span class="prelude-val">Some</span>(<span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="ident">I::from</span>(<span class="ident">rx</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">y</span>: <span class="ident">I::from</span>(<span class="ident">ry</span>).<span class="ident">unwrap</span>(),
-        })
+    <span class="doccomment">/// Cubic `X` component.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">x</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
+        <span class="self">self</span>.<span class="ident">q</span>
+    }
+
+    <span class="doccomment">/// Cubic `Y` component.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">y</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
+        <span class="ident">I::zero</span>() <span class="op">-</span> <span class="self">self</span>.<span class="ident">q</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">r</span>
+    }
+
+    <span class="doccomment">/// Cubic `Z` component.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">z</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
+        <span class="self">self</span>.<span class="ident">r</span>
+    }
+
+    <span class="doccomment">/// Distance from Origin</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">length</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
+        <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">q</span>.<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">r</span>.<span class="ident">abs</span>();
+        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> (<span class="ident">I::zero</span>() <span class="op">-</span> <span class="self">self</span>.<span class="ident">q</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">r</span>).<span class="ident">abs</span>();
+        (<span class="ident">q</span> <span class="op">+</span> <span class="ident">r</span> <span class="op">+</span> <span class="ident">s</span>) <span class="op">/</span> <span class="ident">I::from_u8</span>(<span class="number">2</span>).<span class="ident">unwrap</span>()
+    }
+
+    <span class="doccomment">/// Convert Coordinate into fractional [Position](crate::Position).</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_position</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
+        <span class="ident">Position::from_coordinate</span>(<span class="kw-2">*</span><span class="self">self</span>)
     }
 
     <span class="doccomment">/// Find the hex containing a pixel. The origin of the pixel coordinates</span>
     <span class="doccomment">/// is the center of the hex at (0,0) in hex coordinates.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cartesian</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">f3</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">3</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">f2</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">f3s</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">f3</span>.<span class="ident">sqrt</span>();
-        <span class="kw">match</span> <span class="ident">spacing</span> {
-            <span class="ident">Spacing::PointyTop</span>(<span class="ident">size</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> (<span class="ident">x</span> <span class="op">*</span> <span class="ident">f3s</span> <span class="op">/</span> <span class="ident">f3</span> <span class="op">-</span> <span class="ident">y</span> <span class="op">/</span> <span class="ident">f3</span>) <span class="op">/</span> <span class="ident">size</span>;
-                <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">y</span> <span class="op">*</span> <span class="ident">f2</span> <span class="op">/</span> <span class="ident">f3</span> <span class="op">/</span> <span class="ident">size</span>;
-                <span class="ident">Coordinate::nearest</span>(<span class="ident">q</span>, <span class="op">-</span><span class="ident">r</span> <span class="op">-</span> <span class="ident">q</span>)
-            }
-            <span class="ident">Spacing::FlatTop</span>(<span class="ident">size</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">*</span> <span class="ident">f2</span> <span class="op">/</span> <span class="ident">f3</span> <span class="op">/</span> <span class="ident">size</span>;
-                <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> (<span class="op">-</span><span class="ident">x</span> <span class="op">/</span> <span class="ident">f3</span> <span class="op">+</span> <span class="ident">f3s</span> <span class="op">/</span> <span class="ident">f3</span> <span class="op">*</span> <span class="ident">y</span>) <span class="op">/</span> <span class="ident">size</span>;
-                <span class="ident">Coordinate::nearest</span>(<span class="ident">q</span>, <span class="op">-</span><span class="ident">r</span> <span class="op">-</span> <span class="ident">q</span>)
-            }
-        }
+    <span class="doccomment">///</span>
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_cartesian</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="ident">x</span>: <span class="ident">F</span>, <span class="ident">y</span>: <span class="ident">F</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">Coordinate::from_position</span>(<span class="ident">Position::from_cartesian</span>(<span class="ident">x</span>, <span class="ident">y</span>, <span class="ident">spacing</span>))
     }
 
     <span class="doccomment">/// Convert integer pixel coordinates `v` using `spacing` to nearest coordinate that has both</span>
@@ -729,20 +764,20 @@
     <span class="doccomment">/// from that coordinate.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Useful for ASCII visualization. Shamelessly stolen from [Hex2d](https://github.com/dpc/hex2d-rs).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nearest_with_offset</span>(<span class="ident">spacing</span>: <span class="ident">IntegerSpacing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">v</span>: (<span class="ident">I</span>, <span class="ident">I</span>)) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, (<span class="ident">I</span>, <span class="ident">I</span>)) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">nearest_with_offset</span>(<span class="ident">spacing</span>: <span class="ident">IntegerSpacing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">v</span>: (<span class="ident">I</span>, <span class="ident">I</span>)) -&gt; (<span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, (<span class="ident">I</span>, <span class="ident">I</span>)) {
         <span class="kw">let</span> (<span class="ident">asc_x</span>, <span class="ident">asc_y</span>) <span class="op">=</span> <span class="ident">v</span>;
 
         <span class="kw">let</span> <span class="ident">two</span>: <span class="ident">I</span> <span class="op">=</span> <span class="ident">I::from_i8</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
 
         <span class="kw">let</span> ((<span class="ident">q</span>, <span class="ident">qo</span>), (<span class="ident">r</span>, <span class="ident">ro</span>)) <span class="op">=</span> <span class="kw">match</span> <span class="ident">spacing</span> {
-            <span class="ident">IntegerSpacing::FlatTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">IntegerSpacing::FlatTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) =&gt; (
                 (<span class="ident">asc_x</span>.<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>), <span class="ident">asc_x</span>.<span class="ident">mod_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>)),
                 (
                     (<span class="ident">asc_y</span> <span class="op">-</span> <span class="ident">h</span> <span class="op">*</span> <span class="ident">asc_x</span>.<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>) <span class="op">/</span> <span class="ident">two</span>).<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>),
                     (<span class="ident">asc_y</span> <span class="op">+</span> <span class="ident">h</span> <span class="op">/</span> <span class="ident">two</span> <span class="op">*</span> <span class="ident">asc_x</span>.<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>)).<span class="ident">mod_floor</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>),
                 ),
             ),
-            <span class="ident">IntegerSpacing::PointyTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">IntegerSpacing::PointyTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) =&gt; (
                 (
                     (<span class="ident">asc_x</span> <span class="op">-</span> <span class="ident">w</span> <span class="op">*</span> <span class="ident">asc_y</span>.<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>) <span class="op">/</span> <span class="ident">two</span>).<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>),
                     (<span class="ident">asc_x</span> <span class="op">+</span> <span class="ident">w</span> <span class="op">/</span> <span class="ident">two</span> <span class="op">*</span> <span class="ident">asc_y</span>.<span class="ident">div_floor</span>(<span class="kw-2">&amp;</span><span class="ident">h</span>)).<span class="ident">mod_floor</span>(<span class="kw-2">&amp;</span><span class="ident">w</span>),
@@ -751,45 +786,47 @@
             ),
         };
 
-        <span class="kw">let</span> <span class="ident">coord</span> <span class="op">=</span> <span class="ident">Coordinate</span> { <span class="ident">x</span>: <span class="ident">q</span>, <span class="ident">y</span>: <span class="op">-</span><span class="ident">q</span> <span class="op">-</span> <span class="ident">r</span> };
+        <span class="kw">let</span> <span class="ident">coord</span> <span class="op">=</span> <span class="ident">Coordinate</span> { <span class="ident">q</span>, <span class="ident">r</span> };
         (<span class="ident">coord</span>, (<span class="ident">qo</span>, <span class="ident">ro</span>))
     }
 
-    <span class="doccomment">/// Convert to pixel coordinates using `spacing`, where the</span>
-    <span class="doccomment">/// parameter means the edge length of a hexagon.</span>
+    <span class="doccomment">/// Convert center point to cartesian coordinates using `spacing`, where the size parameter</span>
+    <span class="doccomment">/// is the edge length of a hexagon.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// This function is meant for graphical user interfaces</span>
-    <span class="doccomment">/// where resolution is big enough that floating point calculation</span>
-    <span class="doccomment">/// make sense.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_cartesian_center</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">F</span>, <span class="ident">F</span>) {
-        <span class="kw">let</span> <span class="ident">f3</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">3</span>).<span class="ident">unwrap</span>();
+    <span class="doccomment">/// This function is meant for graphical user interfaces where resolution is big enough that</span>
+    <span class="doccomment">/// floating point calculation make sense.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See [Hex to Screen](https://www.redblobgames.com/grids/hexagons/implementation.html#hex-to-pixel)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cartesian_center</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; (<span class="ident">F</span>, <span class="ident">F</span>) {
         <span class="kw">let</span> <span class="ident">f2</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">f3</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">3</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">f3s</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">f3</span>.<span class="ident">sqrt</span>();
-        <span class="kw">let</span> <span class="ident">q</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">x</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">r</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">z</span>()).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">q</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">q</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">r</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">r</span>).<span class="ident">unwrap</span>();
+
         <span class="kw">match</span> <span class="ident">spacing</span> {
-            <span class="ident">Spacing::FlatTop</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">s</span> <span class="op">*</span> <span class="ident">f3</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">q</span>, <span class="ident">s</span> <span class="op">*</span> <span class="ident">f3s</span> <span class="op">*</span> (<span class="ident">r</span> <span class="op">+</span> <span class="ident">q</span> <span class="op">/</span> <span class="ident">f2</span>)),
-            <span class="ident">Spacing::PointyTop</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">s</span> <span class="op">*</span> <span class="ident">f3s</span> <span class="op">*</span> (<span class="ident">q</span> <span class="op">+</span> <span class="ident">r</span> <span class="op">/</span> <span class="ident">f2</span>), <span class="ident">s</span> <span class="op">*</span> <span class="ident">f3</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">r</span>),
+            <span class="ident">Spacing::FlatTop</span>(<span class="ident">size</span>) =&gt; (<span class="ident">size</span> <span class="op">*</span> (<span class="ident">f3</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">q</span>), <span class="ident">size</span> <span class="op">*</span> (<span class="ident">f3s</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">q</span> <span class="op">+</span> <span class="ident">f3s</span> <span class="op">*</span> <span class="ident">r</span>)),
+            <span class="ident">Spacing::PointyTop</span>(<span class="ident">size</span>) =&gt; (<span class="ident">size</span> <span class="op">*</span> (<span class="ident">f3s</span> <span class="op">*</span> <span class="ident">q</span> <span class="op">+</span> <span class="ident">f3s</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">r</span>), <span class="ident">size</span> <span class="op">*</span> (<span class="ident">f3</span> <span class="op">/</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">r</span>)),
         }
     }
 
-    <span class="doccomment">/// Create a set of ordered points to draw a hex.</span>
+    <span class="doccomment">/// Create a set of ordered cartesian points to draw a hex.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Reference:</span>
     <span class="doccomment">/// [Layout](https://www.redblobgames.com/grids/hexagons/implementation.html#layout)</span>
     <span class="doccomment">/// [Drawing a Hex](https://www.redblobgames.com/grids/hexagons/implementation.html#hex-geometry)</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_corner_points</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> [(<span class="ident">F</span>, <span class="ident">F</span>); <span class="number">6</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_corner_points</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">Spacing</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; [(<span class="ident">F</span>, <span class="ident">F</span>); <span class="number">6</span>] {
         <span class="kw">let</span> <span class="ident">fz</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::zero</span>();
         <span class="kw">let</span> <span class="ident">fh</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">0.5</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">f2</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">f6</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">6</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">pi</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="ident">std::f64::consts::PI</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">center</span>: (<span class="ident">F</span>, <span class="ident">F</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">to_cartesian_center</span>(<span class="ident">spacing</span>);
+        <span class="kw">let</span> <span class="ident">center</span>: (<span class="ident">F</span>, <span class="ident">F</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cartesian_center</span>(<span class="ident">spacing</span>);
         <span class="kw">let</span> <span class="ident">corner_offset</span> <span class="op">=</span> <span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">corner</span> <span class="op">=</span> <span class="ident">F::from_u8</span>(<span class="ident">i</span>).<span class="ident">unwrap</span>();
             <span class="kw">let</span> (<span class="ident">start_angle</span>, <span class="ident">size</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">spacing</span> {
-                <span class="ident">Spacing::FlatTop</span>(<span class="ident">size</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">fz</span>, <span class="ident">size</span>),
-                <span class="ident">Spacing::PointyTop</span>(<span class="ident">size</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">fh</span>, <span class="ident">size</span>),
+                <span class="ident">Spacing::FlatTop</span>(<span class="ident">size</span>) =&gt; (<span class="ident">fz</span>, <span class="ident">size</span>),
+                <span class="ident">Spacing::PointyTop</span>(<span class="ident">size</span>) =&gt; (<span class="ident">fh</span>, <span class="ident">size</span>),
             };
             <span class="kw">let</span> <span class="ident">angle</span> <span class="op">=</span> <span class="ident">f2</span> <span class="op">*</span> <span class="ident">pi</span> <span class="op">*</span> (<span class="ident">start_angle</span> <span class="op">+</span> <span class="ident">corner</span>) <span class="op">/</span> <span class="ident">f6</span>;
             (<span class="ident">center</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">size</span> <span class="op">*</span> <span class="ident">angle</span>.<span class="ident">cos</span>(), <span class="ident">center</span>.<span class="number">1</span> <span class="op">+</span> <span class="ident">size</span> <span class="op">*</span> <span class="ident">angle</span>.<span class="ident">sin</span>())
@@ -806,94 +843,90 @@
 
     <span class="doccomment">/// Convert to integer pixel coordinates using `spacing`, where the</span>
     <span class="doccomment">/// parameters mean the width and height multiplications</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_pixel_integer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">IntegerSpacing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">I</span>, <span class="ident">I</span>) {
-        <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_pixel_integer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">spacing</span>: <span class="ident">IntegerSpacing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; (<span class="ident">I</span>, <span class="ident">I</span>) {
+        <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">q</span>;
         <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">z</span>();
         <span class="kw">let</span> <span class="ident">two</span> <span class="op">=</span> <span class="ident">I::from_i8</span>(<span class="number">2</span>).<span class="ident">unwrap</span>();
 
         <span class="kw">match</span> <span class="ident">spacing</span> {
-            <span class="ident">IntegerSpacing::FlatTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">w</span> <span class="op">*</span> <span class="ident">q</span>, <span class="ident">h</span> <span class="op">*</span> (<span class="ident">r</span> <span class="op">+</span> <span class="ident">r</span> <span class="op">+</span> <span class="ident">q</span>) <span class="op">/</span> <span class="ident">two</span>),
-            <span class="ident">IntegerSpacing::PointyTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">w</span> <span class="op">*</span> (<span class="ident">q</span> <span class="op">+</span> <span class="ident">q</span> <span class="op">+</span> <span class="ident">r</span>) <span class="op">/</span> <span class="ident">two</span>, <span class="ident">h</span> <span class="op">*</span> <span class="ident">r</span>),
+            <span class="ident">IntegerSpacing::FlatTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) =&gt; (<span class="ident">w</span> <span class="op">*</span> <span class="ident">q</span>, <span class="ident">h</span> <span class="op">*</span> (<span class="ident">r</span> <span class="op">+</span> <span class="ident">r</span> <span class="op">+</span> <span class="ident">q</span>) <span class="op">/</span> <span class="ident">two</span>),
+            <span class="ident">IntegerSpacing::PointyTop</span>(<span class="ident">w</span>, <span class="ident">h</span>) =&gt; (<span class="ident">w</span> <span class="op">*</span> (<span class="ident">q</span> <span class="op">+</span> <span class="ident">q</span> <span class="op">+</span> <span class="ident">r</span>) <span class="op">/</span> <span class="ident">two</span>, <span class="ident">h</span> <span class="op">*</span> <span class="ident">r</span>),
         }
     }
 
-    <span class="doccomment">/// Scale coordinate by a factor `s`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scale</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">s</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span> <span class="op">*</span> <span class="ident">s</span>;
-        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span> <span class="op">*</span> <span class="ident">s</span>;
-        <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
+    <span class="doccomment">/// Scale coordinate by a factor `scalar`</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// See [Coordinate arithmetic](https://www.redblobgames.com/grids/hexagons/implementation.html#hex-arithmetic)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">scale</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">scalar</span>: <span class="ident">I</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">q</span> <span class="op">*</span> <span class="ident">scalar</span>;
+        <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">r</span> <span class="op">*</span> <span class="ident">scalar</span>;
+        <span class="ident">Coordinate</span> { <span class="ident">q</span>, <span class="ident">r</span> }
     }
 
     <span class="doccomment">/// Array with all the neighbors of a coordinate</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">neighbors</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>; <span class="number">6</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">neighbors</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>; <span class="number">6</span>] {
         [
-            <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::YZ</span>,
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::XZ</span>,
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::XY</span>,
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::ZY</span>,
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::ZX</span>,
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::YX</span>,
+            <span class="kw-2">*</span><span class="self">self</span> <span class="op">+</span> <span class="ident">Direction::YZ</span>,
         ]
     }
 
     <span class="doccomment">/// Rotate self around a point `(0, 0, 0)` using angle of rotation `a`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_around_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>, <span class="ident">z</span>) <span class="op">=</span> (<span class="self">self</span>.<span class="ident">x</span>, <span class="self">self</span>.<span class="ident">y</span>, <span class="self">self</span>.<span class="ident">z</span>());
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_around_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>, <span class="ident">z</span>) <span class="op">=</span> (<span class="self">self</span>.<span class="ident">q</span>, <span class="self">self</span>.<span class="ident">r</span>, <span class="self">self</span>.<span class="ident">z</span>());
 
         <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">a</span> {
-            <span class="ident">Angle::Forward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">x</span>, <span class="ident">y</span>),
-            <span class="ident">Angle::RightForward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="op">-</span><span class="ident">z</span>, <span class="op">-</span><span class="ident">x</span>),
-            <span class="ident">Angle::RightBackward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">y</span>, <span class="ident">z</span>),
-            <span class="ident">Angle::Backward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="op">-</span><span class="ident">x</span>, <span class="op">-</span><span class="ident">y</span>),
-            <span class="ident">Angle::LeftBackward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">z</span>, <span class="ident">x</span>),
-            <span class="ident">Angle::LeftForward</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="op">-</span><span class="ident">y</span>, <span class="op">-</span><span class="ident">z</span>),
+            <span class="ident">Angle::Forward</span> =&gt; (<span class="ident">x</span>, <span class="ident">y</span>),
+            <span class="ident">Angle::RightForward</span> =&gt; (<span class="op">-</span><span class="ident">z</span>, <span class="op">-</span><span class="ident">x</span>),
+            <span class="ident">Angle::RightBackward</span> =&gt; (<span class="ident">y</span>, <span class="ident">z</span>),
+            <span class="ident">Angle::Backward</span> =&gt; (<span class="op">-</span><span class="ident">x</span>, <span class="op">-</span><span class="ident">y</span>),
+            <span class="ident">Angle::LeftBackward</span> =&gt; (<span class="ident">z</span>, <span class="ident">x</span>),
+            <span class="ident">Angle::LeftForward</span> =&gt; (<span class="op">-</span><span class="ident">y</span>, <span class="op">-</span><span class="ident">z</span>),
         };
 
-        <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
+        <span class="ident">Coordinate</span> { <span class="ident">q</span>: <span class="ident">x</span>, <span class="ident">r</span>: <span class="ident">y</span> }
     }
 
     <span class="doccomment">/// Rotate `self` around a `center` using angle of rotation `a`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_around</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">center</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_around</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">center</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">a</span>: <span class="ident">Angle</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">rel_p</span> <span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span> <span class="op">-</span> <span class="ident">center</span>;
         <span class="kw">let</span> <span class="ident">rot_p</span> <span class="op">=</span> <span class="ident">rel_p</span>.<span class="ident">rotate_around_zero</span>(<span class="ident">a</span>);
         <span class="ident">rot_p</span> <span class="op">+</span> <span class="ident">center</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">line_to_iter_gen</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">distance</span>(<span class="ident">dest</span>);
-
-        <span class="kw">let</span> <span class="ident">ax</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">ay</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">bx</span> <span class="op">=</span> <span class="ident">dest</span>.<span class="ident">x</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">by</span> <span class="op">=</span> <span class="ident">dest</span>.<span class="ident">y</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>();
-        <span class="ident">LineToGen::new</span>(<span class="ident">ax</span>, <span class="ident">ay</span>, <span class="ident">bx</span>, <span class="ident">by</span>, <span class="ident">n</span>, <span class="ident">num::Zero::zero</span>())
-    }
-
     <span class="doccomment">/// Iterator over each coordinate in straight line from `self` to `dest`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">line_to_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToIter::new</span>(<span class="self">self</span>.<span class="ident">line_to_iter_gen</span>(<span class="ident">dest</span>))
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">line_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">LineIter::new</span>(<span class="ident">LineGenIter::new</span>(
+            <span class="self">self</span>.<span class="ident">into_position</span>(),
+            <span class="ident">target</span>.<span class="ident">into_position</span>(),
+        ))
     }
 
     <span class="doccomment">/// Iterator over each coordinate in straight line from `self` to `dest`</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Skip points on the border of two tiles</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">line_to_lossy_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToLossyIter::new</span>(<span class="self">self</span>.<span class="ident">line_to_iter_gen</span>(<span class="ident">dest</span>))
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">lossy_line_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">LossyLineIter::new</span>(<span class="ident">LineGenIter::new</span>(
+            <span class="self">self</span>.<span class="ident">into_position</span>(),
+            <span class="ident">target</span>.<span class="ident">into_position</span>(),
+        ))
     }
 
     <span class="doccomment">/// Iterator over each coordinate in straight line from `self` to `dest`</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// On edge condition the pair contains different members, otherwise it&#39;s the same.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">line_to_with_edge_detection_iter</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">line_iter_with_edge_detection</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">dest</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToWithEdgeDetection::new</span>(<span class="self">self</span>.<span class="ident">line_to_iter_gen</span>(<span class="ident">dest</span>))
-    }
-
-    <span class="doccomment">/// Z coordinate</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">z</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">I</span> {
-        <span class="op">-</span><span class="self">self</span>.<span class="ident">x</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">y</span>
+        <span class="ident">target</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>,
+    ) -&gt; <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">LineIterWithEdgeDetection::new</span>(<span class="ident">LineGenIter::new</span>(
+            <span class="self">self</span>.<span class="ident">into_position</span>(),
+            <span class="ident">target</span>.<span class="ident">into_position</span>(),
+        ))
     }
 
     <span class="doccomment">/// Direction from center `(0, 0)` to coordinate</span>
@@ -904,74 +937,60 @@
     <span class="doccomment">/// Returns:</span>
     <span class="doccomment">/// None if is center</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// use hexgrid::{Angle, Direction, Coordinate};</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// let center = Coordinate::from_cubic(0, 0);</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// assert_eq!(center.direction_from_center_cw(), None);</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// for &amp;d in Direction::all() {</span>
-    <span class="doccomment">///     assert_eq!((center + d).direction_from_center_cw(), Some(d));</span>
-    <span class="doccomment">///     assert_eq!((center + d + (d + Angle::LeftForward)).direction_from_center_cw(), Some(d));</span>
-    <span class="doccomment">///     assert_eq!((center + d + (d + Angle::RightForward)).direction_from_center_cw(), Some(d + Angle::RightForward));</span>
-    <span class="doccomment">/// }</span>
-    <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_from_center_cw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>;
-        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_from_center_cw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>();
+        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>();
         <span class="kw">let</span> <span class="ident">z</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">z</span>();
-        <span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">I</span> <span class="op">=</span> <span class="ident">I::from_i8</span>(<span class="number">0</span>).<span class="ident">unwrap</span>();
 
-        <span class="kw">let</span> <span class="ident">xy</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">zero</span> { <span class="ident">x</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">y</span> } <span class="kw">else</span> { <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">y</span> };
-        <span class="kw">let</span> <span class="ident">yz</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">zero</span> { <span class="ident">y</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">z</span> } <span class="kw">else</span> { <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">z</span> };
-        <span class="kw">let</span> <span class="ident">zx</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">zero</span> { <span class="ident">z</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">x</span> } <span class="kw">else</span> { <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">x</span> };
-        <span class="kw">match</span> (<span class="ident">xy</span>, <span class="ident">yz</span>, <span class="ident">zx</span>) {
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::XZ</span>),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::XY</span>),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::ZY</span>),
+        <span class="kw">let</span> <span class="ident">xz</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() { <span class="ident">x</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">z</span> } <span class="kw">else</span> { <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">z</span> };
+        <span class="kw">let</span> <span class="ident">zy</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() { <span class="ident">z</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">y</span> } <span class="kw">else</span> { <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">y</span> };
+        <span class="kw">let</span> <span class="ident">yx</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() { <span class="ident">y</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">x</span> } <span class="kw">else</span> { <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">x</span> };
 
-            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::ZX</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::YX</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::YZ</span>),
+        <span class="kw">match</span> (<span class="ident">xz</span>, <span class="ident">zy</span>, <span class="ident">yx</span>) {
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::XZ</span>),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::XY</span>),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::ZY</span>),
 
-            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic!</span>(<span class="string">&quot;You broke math&quot;</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::ZX</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::YZ</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::YX</span>),
+
+            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">None</span>,
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">panic!</span>(<span class="string">&quot;You broke math&quot;</span>),
         }
     }
 
     <span class="doccomment">/// Directions that lead from center to a given point.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns an array of one or two directions.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">directions_from_center</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>;
-        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">directions_from_center</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>();
+        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>();
         <span class="kw">let</span> <span class="ident">z</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">z</span>();
-        <span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">I</span> <span class="op">=</span> <span class="ident">I::from_i8</span>(<span class="number">0</span>).<span class="ident">unwrap</span>();
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dirs</span> <span class="op">=</span> <span class="ident">Vec::with_capacity</span>(<span class="number">2</span>);
 
-        <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
-            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::XZ</span>)
-        }
-
-        <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
-            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::XY</span>)
-        }
-
-        <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
-            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::ZY</span>)
-        }
-
-        <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
+        <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
             <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::ZX</span>)
         }
 
-        <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
+        <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
+            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::ZY</span>)
+        }
+
+        <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">y</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
+            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::XY</span>)
+        }
+
+        <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
+            <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::ZX</span>)
+        }
+
+        <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">z</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
             <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::YZ</span>)
         }
 
-        <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">zero</span> <span class="op">&amp;&amp;</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">zero</span> {
+        <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="ident">x</span> <span class="op">&lt;</span> <span class="ident">I::zero</span>() {
             <span class="ident">dirs</span>.<span class="ident">push</span>(<span class="ident">Direction::YX</span>)
         }
 
@@ -986,10 +1005,12 @@
     <span class="doccomment">/// Returns:</span>
     <span class="doccomment">/// None if is center</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
+    <span class="doccomment">/// TODO: Example/Function broken.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```notrust</span>
     <span class="doccomment">/// use hexgrid::{Angle, Direction, Coordinate};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let center = Coordinate::from_cubic(0, 0);</span>
+    <span class="doccomment">/// let center = Coordinate::from_axial(0, 0);</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// assert_eq!(center.direction_from_center_ccw(), None);</span>
     <span class="doccomment">///</span>
@@ -999,31 +1020,31 @@
     <span class="doccomment">///     assert_eq!((center + d + (d + Angle::RightForward)).direction_from_center_ccw(), Some(d));</span>
     <span class="doccomment">/// }</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_from_center_ccw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>;
-        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_from_center_ccw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">x</span>();
+        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">y</span>();
         <span class="kw">let</span> <span class="ident">z</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">z</span>();
-        <span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">I</span> <span class="op">=</span> <span class="ident">I::zero</span>();
 
-        <span class="kw">let</span> <span class="ident">xy</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">zero</span> { <span class="ident">x</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">y</span> } <span class="kw">else</span> { <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">y</span> };
-        <span class="kw">let</span> <span class="ident">yz</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">zero</span> { <span class="ident">y</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">z</span> } <span class="kw">else</span> { <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">z</span> };
-        <span class="kw">let</span> <span class="ident">zx</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">zero</span> { <span class="ident">z</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">x</span> } <span class="kw">else</span> { <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">x</span> };
-        <span class="kw">match</span> (<span class="ident">xy</span>, <span class="ident">yz</span>, <span class="ident">zx</span>) {
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::XZ</span>),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::XY</span>),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::ZY</span>),
+        <span class="kw">let</span> <span class="ident">xz</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() { <span class="ident">x</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">z</span> } <span class="kw">else</span> { <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">z</span> }; <span class="comment">// t</span>
+        <span class="kw">let</span> <span class="ident">zy</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() { <span class="ident">z</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">y</span> } <span class="kw">else</span> { <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">y</span> }; <span class="comment">// f</span>
+        <span class="kw">let</span> <span class="ident">yx</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">z</span> <span class="op">&gt;</span> <span class="ident">I::zero</span>() { <span class="ident">y</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">x</span> } <span class="kw">else</span> { <span class="ident">y</span> <span class="op">&gt;</span> <span class="ident">x</span> }; <span class="comment">// f</span>
 
-            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::ZX</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::YX</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Direction::YZ</span>),
+        <span class="kw">match</span> (<span class="ident">xz</span>, <span class="ident">zy</span>, <span class="ident">yx</span>) {
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::XZ</span>),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::XY</span>),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::ZY</span>),
 
-            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic!</span>(<span class="string">&quot;You broke math&quot;</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::ZX</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::YX</span>),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Direction::YZ</span>),
+
+            (<span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="prelude-val">None</span>,
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">panic!</span>(<span class="string">&quot;You broke math&quot;</span>),
         }
     }
 
     <span class="doccomment">/// Directions from self to `coordinate`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">directions_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">directions_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
         (<span class="ident">coordinate</span> <span class="op">-</span> <span class="kw-2">*</span><span class="self">self</span>).<span class="ident">directions_from_center</span>()
     }
 
@@ -1034,7 +1055,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns:</span>
     <span class="doccomment">/// None if is center</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_to_cw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_to_cw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
         (<span class="ident">coordinate</span> <span class="op">-</span> <span class="kw-2">*</span><span class="self">self</span>).<span class="ident">direction_from_center_cw</span>()
     }
 
@@ -1045,20 +1066,20 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns:</span>
     <span class="doccomment">/// None if is center</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_to_ccw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">direction_to_ccw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> {
         (<span class="ident">coordinate</span> <span class="op">-</span> <span class="kw-2">*</span><span class="self">self</span>).<span class="ident">direction_from_center_ccw</span>()
     }
 
     <span class="doccomment">/// Distance between two Coordinates</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">I</span> {
-        ((<span class="self">self</span>.<span class="ident">x</span> <span class="op">-</span> <span class="ident">coordinate</span>.<span class="ident">x</span>).<span class="ident">abs</span>()
-            <span class="op">+</span> (<span class="self">self</span>.<span class="ident">y</span> <span class="op">-</span> <span class="ident">coordinate</span>.<span class="ident">y</span>).<span class="ident">abs</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">distance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">coordinate</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="ident">I</span> {
+        ((<span class="self">self</span>.<span class="ident">x</span>() <span class="op">-</span> <span class="ident">coordinate</span>.<span class="ident">x</span>()).<span class="ident">abs</span>()
+            <span class="op">+</span> (<span class="self">self</span>.<span class="ident">y</span>() <span class="op">-</span> <span class="ident">coordinate</span>.<span class="ident">y</span>()).<span class="ident">abs</span>()
             <span class="op">+</span> (<span class="self">self</span>.<span class="ident">z</span>() <span class="op">-</span> <span class="ident">coordinate</span>.<span class="ident">z</span>()).<span class="ident">abs</span>())
             <span class="op">/</span> <span class="ident">I::from_i8</span>(<span class="number">2</span>).<span class="ident">unwrap</span>()
     }
 
     <span class="doccomment">/// An iterator over all coordinates in radius `r`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">range_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RangeIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">range_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>) -&gt; <span class="ident">RangeIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">RangeIter::new</span>(<span class="self">self</span>, <span class="ident">radius</span>)
     }
 
@@ -1072,7 +1093,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let center = Coordinate::from_cubic(5, -1);</span>
+    <span class="doccomment">/// let center = Coordinate::from_axial(5, -1);</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// for &amp;c in &amp;center.neighbors() {</span>
     <span class="doccomment">///     for ring_c in c.ring_iter(5, Spin::CCW(Direction::XY)) {</span>
@@ -1080,7 +1101,7 @@
     <span class="doccomment">///     }</span>
     <span class="doccomment">/// }</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ring_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ring_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) -&gt; <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">Ring::new</span>(<span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)
     }
 
@@ -1093,40 +1114,70 @@
     <span class="doccomment">/// ```rust</span>
     <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// let locations = Coordinate::from_cubic(0, 0).spiral_iter(5, Spin::CW(Direction::YZ)).collect::&lt;Vec&lt;_&gt;&gt;();</span>
+    <span class="doccomment">/// let locations = Coordinate::from_axial(0, 0).spiral_iter(2, Spin::CW(Direction::YZ)).collect::&lt;Vec&lt;_&gt;&gt;();</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// assert_eq!(locations[0].distance(Coordinate::from_cubic(0,0)), 0);</span>
-    <span class="doccomment">/// assert_eq!(locations[1].distance(Coordinate::from_cubic(0,0)), 1);</span>
-    <span class="doccomment">/// assert_eq!(locations[7].distance(Coordinate::from_cubic(0,0)), 2);</span>
+    <span class="doccomment">/// assert_eq!(locations.len(), 19);</span>
+    <span class="doccomment">/// assert_eq!(locations[0].distance(Coordinate::from_axial(0,0)), 0);</span>
+    <span class="doccomment">/// assert_eq!(locations[1].distance(Coordinate::from_axial(0,0)), 1);</span>
+    <span class="doccomment">/// assert_eq!(locations[7].distance(Coordinate::from_axial(0,0)), 2);</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spiral_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Spiral</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">Spiral::new</span>(<span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">spiral_iter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) -&gt; <span class="ident">Spiral</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">Spiral::new</span>(<span class="kw-2">*</span><span class="self">self</span>, <span class="ident">radius</span>, <span class="ident">spin</span>)
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span>(<span class="ident">I</span>, <span class="ident">I</span>)<span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">xy</span>: (<span class="ident">I</span>, <span class="ident">I</span>)) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="ident">xy</span>;
-        <span class="ident">Coordinate</span> { <span class="ident">x</span>, <span class="ident">y</span> }
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">qr</span>: (<span class="ident">I</span>, <span class="ident">I</span>)) -&gt; <span class="self">Self</span> {
+        <span class="ident">Coordinate::from_axial</span>(<span class="ident">qr</span>.<span class="number">0</span>, <span class="ident">qr</span>.<span class="number">1</span>)
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span>(<span class="ident">I</span>, <span class="ident">I</span>, <span class="ident">I</span>)<span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">xyz</span>: (<span class="ident">I</span>, <span class="ident">I</span>, <span class="ident">I</span>)) -&gt; <span class="self">Self</span> {
+        <span class="ident">Coordinate::from_cubic</span>(<span class="ident">xyz</span>.<span class="number">0</span>, <span class="ident">xyz</span>.<span class="number">1</span>, <span class="ident">xyz</span>.<span class="number">2</span>)
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">position</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">Coordinate::nearest</span>(<span class="ident">position</span>.<span class="ident">x</span>, <span class="ident">position</span>.<span class="ident">y</span>)
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">position</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">Coordinate::from_position</span>(<span class="ident">position</span>)
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Bearing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">bearing</span>: <span class="ident">Bearing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident">bearing</span>.<span class="ident">coordinate</span>
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">direction</span>: <span class="ident">Direction</span>) -&gt; <span class="self">Self</span> {
+        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">direction</span> {
+            <span class="ident">Direction::YZ</span> =&gt; (<span class="number">0</span>, <span class="op">-</span><span class="number">1</span>),
+            <span class="ident">Direction::XZ</span> =&gt; (<span class="number">1</span>, <span class="op">-</span><span class="number">1</span>),
+            <span class="ident">Direction::XY</span> =&gt; (<span class="number">1</span>, <span class="number">0</span>),
+            <span class="ident">Direction::ZY</span> =&gt; (<span class="number">0</span>, <span class="number">1</span>),
+            <span class="ident">Direction::ZX</span> =&gt; (<span class="op">-</span><span class="number">1</span>, <span class="number">1</span>),
+            <span class="ident">Direction::YX</span> =&gt; (<span class="op">-</span><span class="number">1</span>, <span class="number">0</span>),
+        };
+
+        <span class="ident">Coordinate</span> {
+            <span class="ident">q</span>: <span class="ident">I::from_i8</span>(<span class="ident">x</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">r</span>: <span class="ident">I::from_i8</span>(<span class="ident">y</span>).<span class="ident">unwrap</span>(),
+        }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">std::ops::Add</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">c</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">c</span>: <span class="ident">T</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">c</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">c</span>.<span class="ident">into</span>();
 
         <span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="self">self</span>.<span class="ident">x</span> <span class="op">+</span> <span class="ident">c</span>.<span class="ident">x</span>,
-            <span class="ident">y</span>: <span class="self">self</span>.<span class="ident">y</span> <span class="op">+</span> <span class="ident">c</span>.<span class="ident">y</span>,
+            <span class="ident">q</span>: <span class="self">self</span>.<span class="ident">q</span> <span class="op">+</span> <span class="ident">c</span>.<span class="ident">q</span>,
+            <span class="ident">r</span>: <span class="self">self</span>.<span class="ident">r</span> <span class="op">+</span> <span class="ident">c</span>.<span class="ident">r</span>,
         }
     }
 }
@@ -1134,12 +1185,23 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">std::ops::Sub</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">c</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">c</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">c</span>.<span class="ident">into</span>();
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">T</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">c</span>: <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">rhs</span>.<span class="ident">into</span>();
 
         <span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="self">self</span>.<span class="ident">x</span> <span class="op">-</span> <span class="ident">c</span>.<span class="ident">x</span>,
-            <span class="ident">y</span>: <span class="self">self</span>.<span class="ident">y</span> <span class="op">-</span> <span class="ident">c</span>.<span class="ident">y</span>,
+            <span class="ident">q</span>: <span class="self">self</span>.<span class="ident">q</span> <span class="op">-</span> <span class="ident">c</span>.<span class="ident">q</span>,
+            <span class="ident">r</span>: <span class="self">self</span>.<span class="ident">r</span> <span class="op">-</span> <span class="ident">c</span>.<span class="ident">r</span>,
+        }
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">std::ops::Mul</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
+
+    <span class="kw">fn</span> <span class="ident">mul</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="ident">I</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+        <span class="ident">Coordinate</span> {
+            <span class="ident">q</span>: <span class="self">self</span>.<span class="ident">q</span> <span class="op">*</span> <span class="ident">rhs</span>,
+            <span class="ident">r</span>: <span class="self">self</span>.<span class="ident">r</span> <span class="op">*</span> <span class="ident">rhs</span>,
         }
     }
 }
@@ -1147,34 +1209,10 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">std::ops::Neg</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">neg</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">neg</span>(<span class="self">self</span>) -&gt; <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="op">-</span><span class="self">self</span>.<span class="ident">x</span>,
-            <span class="ident">y</span>: <span class="op">-</span><span class="self">self</span>.<span class="ident">y</span>,
-        }
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Bearing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">bearing</span>: <span class="ident">Bearing</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">bearing</span>.<span class="ident">coordinate</span>
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Direction</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">direction</span>: <span class="ident">Direction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> (<span class="ident">x</span>, <span class="ident">y</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">direction</span> {
-            <span class="ident">Direction::YZ</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">0</span>, <span class="number">1</span>),
-            <span class="ident">Direction::XZ</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">1</span>, <span class="number">0</span>),
-            <span class="ident">Direction::XY</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">1</span>, <span class="op">-</span><span class="number">1</span>),
-            <span class="ident">Direction::ZY</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">0</span>, <span class="op">-</span><span class="number">1</span>),
-            <span class="ident">Direction::ZX</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="op">-</span><span class="number">1</span>, <span class="number">0</span>),
-            <span class="ident">Direction::YX</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="op">-</span><span class="number">1</span>, <span class="number">1</span>),
-        };
-
-        <span class="ident">Coordinate</span> {
-            <span class="ident">x</span>: <span class="ident">I::from_i8</span>(<span class="ident">x</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">y</span>: <span class="ident">I::from_i8</span>(<span class="ident">y</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">q</span>: <span class="op">-</span><span class="self">self</span>.<span class="ident">q</span>,
+            <span class="ident">r</span>: <span class="op">-</span><span class="self">self</span>.<span class="ident">r</span>,
         }
     }
 }

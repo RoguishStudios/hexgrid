@@ -161,11 +161,6 @@
 <span id="161">161</span>
 <span id="162">162</span>
 <span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -183,157 +178,152 @@
 <span class="comment">//</span>
 <span class="comment">// See LICENSE file for more information</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Coordinate</span>, <span class="ident">Integer</span>};
-<span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">One</span>, <span class="ident">Zero</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Coordinate</span>, <span class="ident">Float</span>, <span class="ident">Integer</span>, <span class="ident">Position</span>};
 <span class="kw">use</span> <span class="ident">std::iter</span>;
 
-<span class="doccomment">/// Generic iterator over a line returns x, y values</span>
+<span class="doccomment">/// Generic iterator over a line returns [Position](crate::Position)s.</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">PartialOrd</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> {
-    <span class="ident">ax</span>: <span class="ident">f32</span>,
-    <span class="ident">ay</span>: <span class="ident">f32</span>,
-    <span class="ident">bx</span>: <span class="ident">f32</span>,
-    <span class="ident">by</span>: <span class="ident">f32</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> {
+    <span class="ident">origin</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>,
+    <span class="ident">target</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>,
     <span class="ident">n</span>: <span class="ident">I</span>,
     <span class="ident">i</span>: <span class="ident">I</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ax</span>: <span class="ident">f32</span>, <span class="ident">ay</span>: <span class="ident">f32</span>, <span class="ident">bx</span>: <span class="ident">f32</span>, <span class="ident">by</span>: <span class="ident">f32</span>, <span class="ident">n</span>: <span class="ident">I</span>, <span class="ident">i</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToGen</span> {
-            <span class="ident">ax</span>,
-            <span class="ident">ay</span>,
-            <span class="ident">bx</span>,
-            <span class="ident">by</span>,
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">origin</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>, <span class="ident">target</span>: <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="ident">I::from</span>(<span class="ident">origin</span>.<span class="ident">distance</span>(<span class="ident">target</span>)).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">i</span> <span class="op">=</span> <span class="ident">I::zero</span>();
+        <span class="ident">LineGenIter</span> {
+            <span class="ident">origin</span>,
+            <span class="ident">target</span>,
             <span class="ident">n</span>,
             <span class="ident">i</span>,
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> (<span class="ident">f32</span>, <span class="ident">f32</span>);
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">Position</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">n</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Zero::zero</span>() {
-            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">i</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Zero::zero</span>() {
-                <span class="self">self</span>.<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">One::one</span>();
-                <span class="kw">return</span> <span class="prelude-val">Some</span>((<span class="self">self</span>.<span class="ident">ax</span>, <span class="self">self</span>.<span class="ident">ay</span>));
-            } <span class="kw">else</span> {
-                <span class="kw">return</span> <span class="prelude-val">None</span>;
-            }
-        }
-
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">i</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">n</span> {
-            <span class="kw">return</span> <span class="prelude-val">None</span>;
+            <span class="prelude-val">None</span>
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">n</span> <span class="op">==</span> <span class="ident">I::zero</span>() <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">i</span> <span class="op">==</span> <span class="ident">I::zero</span>() {
+            <span class="self">self</span>.<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">I::one</span>();
+            <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">origin</span>)
+        } <span class="kw">else</span> {
+            <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">i</span>).<span class="ident">unwrap</span>() <span class="op">/</span> <span class="ident">F::from</span>(<span class="self">self</span>.<span class="ident">n</span>).<span class="ident">unwrap</span>();
+            <span class="self">self</span>.<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">I::one</span>();
+            <span class="prelude-val">Some</span>(<span class="ident">Position::from_axial</span>(
+                <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">q</span> <span class="op">+</span> (<span class="self">self</span>.<span class="ident">target</span>.<span class="ident">q</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">q</span>) <span class="op">*</span> <span class="ident">d</span>,
+                <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">q</span> <span class="op">+</span> (<span class="self">self</span>.<span class="ident">target</span>.<span class="ident">r</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">origin</span>.<span class="ident">r</span>) <span class="op">*</span> <span class="ident">d</span>,
+            ))
         }
-
-        <span class="kw">let</span> <span class="ident">d</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">i</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>() <span class="op">/</span> <span class="self">self</span>.<span class="ident">n</span>.<span class="ident">to_f32</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ax</span> <span class="op">+</span> (<span class="self">self</span>.<span class="ident">bx</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">ax</span>) <span class="op">*</span> <span class="ident">d</span>;
-        <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ay</span> <span class="op">+</span> (<span class="self">self</span>.<span class="ident">by</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">ay</span>) <span class="op">*</span> <span class="ident">d</span>;
-        <span class="self">self</span>.<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">One::one</span>();
-        <span class="prelude-val">Some</span>((<span class="ident">x</span>, <span class="ident">y</span>))
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
-        <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">Coordinate</span>::<span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="ident">::nearest</span>(<span class="self">self</span>.<span class="ident">ax</span>, <span class="self">self</span>.<span class="ident">ay</span>);
-        <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">Coordinate::nearest</span>(<span class="self">self</span>.<span class="ident">bx</span>, <span class="self">self</span>.<span class="ident">by</span>);
-        <span class="kw">let</span> <span class="ident">total_size</span> <span class="op">=</span> <span class="ident">origin</span>.<span class="ident">distance</span>(<span class="ident">dest</span>) <span class="op">+</span> <span class="ident">One::one</span>();
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">total_size</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">i</span>;
-        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">len</span>.<span class="ident">to_usize</span>().<span class="ident">unwrap</span>();
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">Coordinate::from_position</span>(<span class="self">self</span>.<span class="ident">origin</span>);
+        <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">Coordinate::from_position</span>(<span class="self">self</span>.<span class="ident">target</span>);
+        <span class="kw">let</span> <span class="ident">total_size</span> <span class="op">=</span> <span class="ident">I::one</span>() <span class="op">+</span> <span class="ident">origin</span>.<span class="ident">distance</span>(<span class="ident">target</span>);
+        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> (<span class="ident">total_size</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">i</span>).<span class="ident">to_usize</span>().<span class="ident">unwrap</span>();
         (<span class="ident">len</span>, <span class="prelude-val">Some</span>(<span class="ident">len</span>))
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">std::iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">std::iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">std::iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">std::iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
 
 <span class="doccomment">/// An iterator over an a line of Coordinates</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">PartialOrd</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span> <span class="op">=</span> <span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToIter</span>(<span class="ident">gen</span>)
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+        <span class="ident">LineIter</span>(<span class="ident">gen</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">x</span>, <span class="ident">y</span>)<span class="op">|</span> <span class="ident">Coordinate::nearest</span>(<span class="ident">x</span>, <span class="ident">y</span>))
+
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="ident">Coordinate::from_position</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">size_hint</span>()
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineToIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
 
 <span class="doccomment">/// An iterator over an a line of Coordinates, using a lossy algorithm</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">PartialOrd</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span> <span class="op">=</span> <span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToLossyIter</span>(<span class="ident">gen</span>)
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+        <span class="ident">LossyLineIter</span>(<span class="ident">gen</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
         <span class="kw">loop</span> {
-            <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">x</span>, <span class="ident">y</span>)<span class="op">|</span> <span class="ident">Coordinate::nearest_lossy</span>(<span class="ident">x</span>, <span class="ident">y</span>));
+            <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="ident">Coordinate::from_position_lossy</span>);
             <span class="kw">match</span> <span class="ident">c</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">c</span> @ <span class="prelude-val">Some</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">c</span>,
-                <span class="prelude-val">Some</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">c</span> @ <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; <span class="kw">return</span> <span class="ident">c</span>,
+                <span class="prelude-val">Some</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">continue</span>,
+                <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">None</span>,
             }
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         (<span class="self">self</span>.<span class="number">0</span>.<span class="ident">size_hint</span>().<span class="number">0</span> <span class="op">/</span> <span class="number">2</span>, <span class="self">self</span>.<span class="number">0</span>.<span class="ident">size_hint</span>().<span class="number">1</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineToLossyIter</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LossyLineIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
 
 <span class="doccomment">/// An iterator over an a line of Coordinates, with edge detection</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">serde::Serialize</span>, <span class="ident">serde::Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>, <span class="ident">PartialOrd</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span> <span class="op">=</span> <span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineToGen</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-        <span class="ident">LineToWithEdgeDetection</span>(<span class="ident">gen</span>)
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">gen</span>: <span class="ident">LineGenIter</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span>) -&gt; <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
+        <span class="ident">LineIterWithEdgeDetection</span>(<span class="ident">gen</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> (<span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>);
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">x</span>, <span class="ident">y</span>)<span class="op">|</span> {
+
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">delta</span>: <span class="ident">F</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">0.000001</span>).<span class="ident">unwrap</span>();
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> {
             (
-                <span class="ident">Coordinate::nearest</span>(<span class="ident">x</span> <span class="op">+</span> <span class="number">0.000001</span>, <span class="ident">y</span> <span class="op">+</span> <span class="number">0.000001</span>),
-                <span class="ident">Coordinate::nearest</span>(<span class="ident">x</span> <span class="op">-</span> <span class="number">0.000001</span>, <span class="ident">y</span> <span class="op">-</span> <span class="number">0.000001</span>),
+                <span class="ident">Position::from_axial</span>(<span class="ident">p</span>.<span class="ident">q</span> <span class="op">+</span> <span class="ident">delta</span>, <span class="ident">p</span>.<span class="ident">r</span> <span class="op">+</span> <span class="ident">delta</span>).<span class="ident">into_coordinate</span>(),
+                <span class="ident">Position::from_axial</span>(<span class="ident">p</span>.<span class="ident">q</span> <span class="op">-</span> <span class="ident">delta</span>, <span class="ident">p</span>.<span class="ident">r</span> <span class="op">-</span> <span class="ident">delta</span>).<span class="ident">into_coordinate</span>(),
             )
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">size_hint</span>()
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineToWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::FusedIterator</span> <span class="kw">for</span> <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span>, <span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span> <span class="ident">iter::ExactSizeIterator</span> <span class="kw">for</span> <span class="ident">LineIterWithEdgeDetection</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">F</span><span class="op">&gt;</span> {}
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="hexgrid" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>

@@ -127,7 +127,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// assert_eq!(Angle::all().len(), 6);</span>
     <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">Angle</span>; <span class="number">6</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">Angle</span>; <span class="number">6</span>] {
         <span class="kw-2">&amp;</span>[
             <span class="ident">Angle::Forward</span>,
             <span class="ident">Angle::RightForward</span>,
@@ -139,32 +139,32 @@
     }
 
     <span class="doccomment">/// Create Angle from integer ordinal in [0, 6) range.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_int</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="ident">i</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Angle</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_int</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="ident">i</span>: <span class="ident">I</span>) -&gt; <span class="ident">Angle</span> {
         <span class="kw">match</span> <span class="ident">i</span>.<span class="ident">mod_floor</span>(<span class="kw-2">&amp;</span><span class="ident">I::from_u8</span>(<span class="number">6</span>).<span class="ident">unwrap</span>()).<span class="ident">to_u8</span>().<span class="ident">unwrap</span>() {
-            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::Forward</span>,
-            <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::RightForward</span>,
-            <span class="number">2</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::RightBackward</span>,
-            <span class="number">3</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::Backward</span>,
-            <span class="number">4</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::LeftBackward</span>,
-            <span class="number">5</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Angle::LeftForward</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic!</span>(),
+            <span class="number">0</span> =&gt; <span class="ident">Angle::Forward</span>,
+            <span class="number">1</span> =&gt; <span class="ident">Angle::RightForward</span>,
+            <span class="number">2</span> =&gt; <span class="ident">Angle::RightBackward</span>,
+            <span class="number">3</span> =&gt; <span class="ident">Angle::Backward</span>,
+            <span class="number">4</span> =&gt; <span class="ident">Angle::LeftBackward</span>,
+            <span class="number">5</span> =&gt; <span class="ident">Angle::LeftForward</span>,
+            <span class="kw">_</span> =&gt; <span class="macro">panic!</span>(),
         }
     }
 
     <span class="doccomment">/// Convert angle to integer ordinal in [0, 6) range.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_int</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">I</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_int</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
         <span class="ident">I::from_u8</span>(<span class="kw-2">*</span><span class="self">self</span> <span class="kw">as</span> <span class="ident">u8</span>).<span class="ident">unwrap</span>()
     }
 
     <span class="doccomment">/// Convert to degrees from bearing.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_degree</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">F</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_degree</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Float</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">F</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Angle::Forward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">0.0</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">Angle::RightForward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">60.0</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">Angle::RightBackward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">120.0</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">Angle::Backward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">180.0</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">Angle::LeftBackward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">240.0</span>).<span class="ident">unwrap</span>(),
-            <span class="ident">Angle::LeftForward</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">F::from</span>(<span class="number">300.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::Forward</span> =&gt; <span class="ident">F::from</span>(<span class="number">0.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::RightForward</span> =&gt; <span class="ident">F::from</span>(<span class="number">60.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::RightBackward</span> =&gt; <span class="ident">F::from</span>(<span class="number">120.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::Backward</span> =&gt; <span class="ident">F::from</span>(<span class="number">180.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::LeftBackward</span> =&gt; <span class="ident">F::from</span>(<span class="number">240.0</span>).<span class="ident">unwrap</span>(),
+            <span class="ident">Angle::LeftForward</span> =&gt; <span class="ident">F::from</span>(<span class="number">300.0</span>).<span class="ident">unwrap</span>(),
         }
     }
 }

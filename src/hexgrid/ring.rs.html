@@ -152,8 +152,8 @@
 <span class="doccomment">/// ```rust</span>
 <span class="doccomment">/// use hexgrid::{Coordinate, Spin, Direction};</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// for location in Coordinate::from_cubic(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {</span>
-<span class="doccomment">///     assert_eq!(location.distance(Coordinate::from_cubic(0,0)), 5);</span>
+<span class="doccomment">/// for location in Coordinate::from_axial(0, 0).ring_iter(5, Spin::CW(Direction::YZ)) {</span>
+<span class="doccomment">///     assert_eq!(location.distance(Coordinate::from_axial(0,0)), 5);</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;ring.svg&quot;</span>)]</span>
@@ -170,9 +170,9 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">radius</span>: <span class="ident">I</span>, <span class="ident">spin</span>: <span class="ident">Spin</span>) -&gt; <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">start_angle</span>, <span class="ident">step_angle</span>, <span class="ident">start_dir</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">spin</span> {
-            <span class="ident">Spin::CW</span>(<span class="ident">d</span>) <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">Spin::CW</span>(<span class="ident">d</span>) =&gt; (
                 <span class="kw">if</span> <span class="ident">radius</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">I::zero</span>() {
                     <span class="ident">Angle::RightBackward</span>
                 } <span class="kw">else</span> {
@@ -181,7 +181,7 @@
                 <span class="ident">Angle::RightForward</span>,
                 <span class="ident">d</span>,
             ),
-            <span class="ident">Spin::CCW</span>(<span class="ident">d</span>) <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">Spin::CCW</span>(<span class="ident">d</span>) =&gt; (
                 <span class="kw">if</span> <span class="ident">radius</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">I::zero</span>() {
                     <span class="ident">Angle::LeftBackward</span>
                 } <span class="kw">else</span> {
@@ -206,7 +206,7 @@
         }
     }
     <span class="doccomment">/// Get Radius of the `Ring`</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">radius</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">I</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">radius</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">I</span> {
         <span class="self">self</span>.<span class="ident">r</span>
     }
 }
@@ -214,7 +214,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">Integer</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">Ring</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">Coordinate</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">fuse</span> {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
         }
@@ -241,11 +241,11 @@
         <span class="ident">ret</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">fuse</span> {
             <span class="kw">return</span> (<span class="number">0</span>, <span class="prelude-val">Some</span>(<span class="number">0</span>));
         }
-        <span class="kw">let</span> <span class="ident">total_size</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">r</span> <span class="op">=</span><span class="op">=</span> <span class="ident">I::zero</span>() {
+        <span class="kw">let</span> <span class="ident">total_size</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">r</span> <span class="op">==</span> <span class="ident">I::zero</span>() {
             <span class="number">1</span>
         } <span class="kw">else</span> {
             <span class="ident">I::to_usize</span>(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="ident">r</span> <span class="op">*</span> <span class="ident">I::from_u8</span>(<span class="number">6</span>).<span class="ident">unwrap</span>())).<span class="ident">unwrap</span>()
