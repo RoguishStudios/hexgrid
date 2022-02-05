@@ -18,6 +18,7 @@ use crate::{Coordinate, Integer};
 use std::collections::HashMap;
 
 /// Sparse Hex Grid Data Storage
+#[derive(Clone, Debug, Default)]
 pub struct SparseHexStorage<I: Integer, D>(HashMap<Coordinate<I>, D>);
 
 impl<I: Integer, D> SparseHexStorage<I, D> {
@@ -55,12 +56,6 @@ impl<I: Integer, D> SparseHexStorage<I, D> {
     /// Clear contents of all hexes.
     pub fn clear(&mut self) {
         self.0.clear()
-    }
-}
-
-impl<I: Integer, D> Default for SparseHexStorage<I, D> {
-    fn default() -> Self {
-        SparseHexStorage(HashMap::default())
     }
 }
 
