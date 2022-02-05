@@ -514,6 +514,8 @@
 <span id="513">513</span>
 <span id="514">514</span>
 <span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
 </pre><pre class="rust"><code><span class="comment">//</span>
 <span class="comment">// Copyright 2021 Hans W. Uhlig. All Rights Reserved.</span>
 <span class="comment">//</span>
@@ -557,6 +559,7 @@
 <span class="kw">mod</span> <span class="ident">position</span>;
 <span class="kw">mod</span> <span class="ident">range</span>;
 <span class="kw">mod</span> <span class="ident">ring</span>;
+<span class="kw">mod</span> <span class="ident">sextant</span>;
 <span class="kw">mod</span> <span class="ident">spacing</span>;
 <span class="kw">mod</span> <span class="ident">sparse</span>;
 <span class="kw">mod</span> <span class="ident">spin</span>;
@@ -567,12 +570,13 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::bearing::Bearing</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::coordinate::Coordinate</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::direction::Direction</span>;
-<span class="kw">use</span> <span class="ident"><span class="self">self</span>::line::LineGenIter</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::line::LineGenIter</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::line</span>::{<span class="ident">LineIter</span>, <span class="ident">LineIterWithEdgeDetection</span>, <span class="ident">LossyLineIter</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::offset::Offset</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::position::Position</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::range::RangeIter</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::ring::Ring</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::sextant::Sextant</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::spacing</span>::{<span class="ident">IntegerSpacing</span>, <span class="ident">Spacing</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::sparse::SparseHexStorage</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="self">self</span>::spin::Spin</span>;
