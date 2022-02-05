@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["hexgrid"] = [{"text":"impl&lt;I:&nbsp;<a class=\"trait\" href=\"hexgrid/trait.Integer.html\" title=\"trait hexgrid::Integer\">Integer</a>, D&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.58.1/core/iter/traits/collect/trait.IntoIterator.html\" title=\"trait core::iter::traits::collect::IntoIterator\">IntoIterator</a> for <a class=\"struct\" href=\"hexgrid/struct.SparseHexStorage.html\" title=\"struct hexgrid::SparseHexStorage\">SparseHexStorage</a>&lt;I, D&gt;","synthetic":false,"types":["hexgrid::sparse::SparseHexStorage"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

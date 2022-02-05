@@ -1,5 +1,5 @@
 var N = null;var sourcesIndex = {};
-sourcesIndex["hexgrid"] = {"name":"","files":["angle.rs","bearing.rs","coordinate.rs","direction.rs","lib.rs","line.rs","offset.rs","position.rs","range.rs","ring.rs","spacing.rs","spin.rs","spiral.rs","storage.rs","types.rs"]};
+sourcesIndex["hexgrid"] = {"name":"","files":["angle.rs","bearing.rs","coordinate.rs","direction.rs","lib.rs","line.rs","offset.rs","position.rs","range.rs","ring.rs","spacing.rs","sparse.rs","spin.rs","spiral.rs","types.rs"]};
 sourcesIndex["num"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["num_bigint"] = {"name":"","dirs":[{"name":"bigint","files":["addition.rs","bits.rs","convert.rs","division.rs","multiplication.rs","power.rs","shift.rs","subtraction.rs"]},{"name":"biguint","files":["addition.rs","bits.rs","convert.rs","division.rs","iter.rs","monty.rs","multiplication.rs","power.rs","shift.rs","subtraction.rs"]}],"files":["bigint.rs","biguint.rs","lib.rs","macros.rs"]};
 sourcesIndex["num_complex"] = {"name":"","files":["cast.rs","lib.rs","pow.rs"]};
