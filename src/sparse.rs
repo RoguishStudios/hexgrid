@@ -33,6 +33,21 @@ impl<I: Integer, D> SparseHexStorage<I, D> {
     pub fn get_mut(&mut self, coordinate: &Coordinate<I>) -> Option<&mut D> {
         self.0.get_mut(&coordinate)
     }
+    /// Get contents of hex mutably, calling f if data doesn't exist.
+    pub fn get_mut_or_insert(
+        &mut self,
+        coordinate: &Coordinate<I>,
+        f: fn(&Coordinate<I>) -> D,
+    ) -> Option<&mut D> {
+        if !self.0.contains_key(coordinate) {
+            self.0.insert(coordinate.clone(), f(coordinate));
+        }
+        self.0.get_mut(coordinate)
+    }
+    /// See if hex has data.
+    pub fn contains(&self, coordinate: &Coordinate<I>) -> bool {
+        self.0.contains_key(coordinate)
+    }
     /// Remove contents of hex.
     pub fn remove(&mut self, coordinate: &Coordinate<I>) {
         self.0.remove(&coordinate);
@@ -46,5 +61,14 @@ impl<I: Integer, D> SparseHexStorage<I, D> {
 impl<I: Integer, D> Default for SparseHexStorage<I, D> {
     fn default() -> Self {
         SparseHexStorage(HashMap::default())
+    }
+}
+
+impl<I: Integer, D> IntoIterator for SparseHexStorage<I, D> {
+    type Item = (Coordinate<I>, D);
+    type IntoIter = std::collections::hash_map::IntoIter<Coordinate<I>, D>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

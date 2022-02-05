@@ -41,26 +41,28 @@ mod offset;
 mod position;
 mod range;
 mod ring;
+mod sextant;
 mod spacing;
+mod sparse;
 mod spin;
 mod spiral;
-mod storage;
 mod types;
 
 pub use self::angle::Angle;
 pub use self::bearing::Bearing;
 pub use self::coordinate::Coordinate;
 pub use self::direction::Direction;
-use self::line::LineGenIter;
+pub use self::line::LineGenIter;
 pub use self::line::{LineIter, LineIterWithEdgeDetection, LossyLineIter};
 pub use self::offset::Offset;
 pub use self::position::Position;
 pub use self::range::RangeIter;
 pub use self::ring::Ring;
+pub use self::sextant::Sextant;
 pub use self::spacing::{IntegerSpacing, Spacing};
+pub use self::sparse::SparseHexStorage;
 pub use self::spin::Spin;
 pub use self::spiral::Spiral;
-pub use self::storage::SparseHexStorage;
 pub use self::types::{Float, Integer};
 
 #[cfg(test)]

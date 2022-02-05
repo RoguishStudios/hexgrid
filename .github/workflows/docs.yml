@@ -16,7 +16,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --verbose
+          args: --verbose --all-features
       - name: Patch Docs
         run: |
           echo '<meta http-equiv="refresh" content="0; url=hexgrid/index.html" /> ' > target/doc/index.html
