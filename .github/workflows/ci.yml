@@ -1,0 +1,80 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build on (${{ matrix.os }} ${{ matrix.rust }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macOS-latest ]
+        rust: [ stable, beta, nightly ]
+    env:
+      RUST_BACKTRACE: full
+      CI: 'True'
+      RUSTFLAGS: '-D warnings'
+    steps:
+      - name: Check out Source
+        uses: actions/checkout@v2
+      - name: Setup Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Build Library
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      - name: Test Library
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release
+      - name: Build & Test Rust Docs
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --release
+
+  publish:
+    name: Publish Documentation
+    needs: build
+    permissions:        # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Setup Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build & Test Rust Docs
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --release
+      - name: Prepare Rust Docs
+        run: echo "<meta http-equiv=\"refresh\" content=\"0; url=hexgrid\">" > target/doc/index.html
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: './target/doc'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

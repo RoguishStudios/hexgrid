@@ -6,4 +6,4 @@ description = "A Support Library for Hexagonal grids. Based on work by redblobga
 
 [dependencies]
 num = "0.4"
-serde = { version = "1.0", features = ["derive"], optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
